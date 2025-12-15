@@ -11,3 +11,26 @@
 .Outfit {
   font-family: "Outfit", sans-serif;
 }
+
+.lightHover:hover {
+  background-color: #fcf4ff;
+}
+
+.darkHover:hover {
+  background-color: #2a004a;
+}
+
+.darkTheme {
+  background-color: #11001f;
+}
+
+.darkBoxShadow:hover {
+  box-shadow: 4px 4px 0 #000;
+}
+.lightBoxShadow:hover {
+  box-shadow: 4px 4px 0 #fff;
+}
+
+.gridAuto {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
