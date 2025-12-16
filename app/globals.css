@@ -34,3 +34,10 @@
 .gridAuto {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
+
+.contactBg {
+  background-image: url("/footer-bg-color.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 90% auto;
+}
