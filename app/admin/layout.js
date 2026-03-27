@@ -15,16 +15,16 @@ export default function AdminLayout({ children }) {
       <div className="absolute bottom-40 left-10 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl" />
 
       <div className="relative w-full px-[6%] sm:px-[8%] lg:px-[10%] xl:px-[12%] pt-10 pb-16">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-          {/* Sidebar */}
-          <aside className="lg:sticky lg:top-24 h-fit">
-            <div className="hidden lg:block">
+        <div className="max-w-7xl mx-auto">
+          {/* Desktop fixed sidebar (fixed to viewport left for consistent alignment) */}
+          <aside className="hidden lg:block fixed left-0 top-24 w-[320px] pl-[10%] xl:pl-[12%] pr-6">
+            <div className="w-[280px]">
               <AdminSidebar />
             </div>
           </aside>
 
           {/* Main */}
-          <main className="min-w-0">
+          <main className="min-w-0 lg:pl-[320px]">
             {/* Top bar (mobile/quick actions) */}
             <div className="lg:hidden mb-5 bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-4 flex items-center justify-between gap-3">
               <div>

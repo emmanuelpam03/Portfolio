@@ -49,6 +49,21 @@ export default function AdminSettingsPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
+              Public email
+            </label>
+            <input
+              type="email"
+              name="publicEmail"
+              placeholder="emmanuelpam03@gmail.com"
+              className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
+            />
+            <p className="text-xs text-gray-500 Ovo mt-2">
+              This is the email displayed on your homepage/footer.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
               Hero headline
             </label>
             <input
