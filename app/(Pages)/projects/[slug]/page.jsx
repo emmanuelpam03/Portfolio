@@ -18,6 +18,7 @@ const slugify = (value) =>
 
 export default function ProjectDetailsPage() {
   const { slug } = useParams();
+  const [showAllMedia, setShowAllMedia] = React.useState(false);
 
   const project =
     workData.find((p) => slugify(p.title) === String(slug)) ?? null;
@@ -234,6 +235,118 @@ export default function ProjectDetailsPage() {
                 </div>
               </motion.aside>
             </div>
+
+            {/* Media (structure-only; supports 0..N items, images/videos) */}
+            <motion.section
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.18 }}
+              className="mt-8 bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-7"
+            >
+              {(() => {
+                const media = Array.isArray(project.media) ? project.media : [];
+                const total = media.length;
+                const previewLimit = 9;
+                const visible = showAllMedia
+                  ? media
+                  : media.slice(0, previewLimit);
+                const canToggle = total > previewLimit;
+
+                return (
+                  <>
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                      <h2 className="text-xl sm:text-2xl font-bold Ovo text-gray-900">
+                        Media
+                      </h2>
+                      <span className="text-sm text-gray-500 Ovo">
+                        {total} items
+                      </span>
+                    </div>
+
+                    {total === 0 && (
+                      <div className="rounded-xl border border-dashed border-gray-300 bg-white/60 p-6 text-center">
+                        <p className="text-gray-700 Ovo font-medium">
+                          No media uploaded yet
+                        </p>
+                        <p className="text-gray-500 Ovo text-sm mt-1">
+                          Images and videos will appear here when added by
+                          admin.
+                        </p>
+                      </div>
+                    )}
+
+                    {total > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {visible.map((item, idx) => {
+                          const key = `${item.type}-${item.src}-${idx}`;
+
+                          if (item.type === "video") {
+                            return (
+                              <div
+                                key={key}
+                                className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+                              >
+                                <video
+                                  className="w-full h-full aspect-video object-cover"
+                                  controls
+                                  preload="metadata"
+                                  src={item.src}
+                                  poster={item.poster}
+                                />
+                                {item.caption && (
+                                  <div className="p-3 text-sm text-gray-600 Ovo">
+                                    {item.caption}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div
+                              key={key}
+                              className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+                            >
+                              <div className="relative w-full aspect-video">
+                                <Image
+                                  src={item.src}
+                                  alt={
+                                    item.alt ||
+                                    `${project.title} media ${idx + 1}`
+                                  }
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                              {item.caption && (
+                                <div className="p-3 text-sm text-gray-600 Ovo">
+                                  {item.caption}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {canToggle && (
+                      <div className="mt-5 flex justify-center">
+                        <button
+                          type="button"
+                          onClick={() => setShowAllMedia((v) => !v)}
+                          className="px-6 py-2.5 rounded-full border-2 border-gray-300 bg-white text-gray-700 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-sm"
+                        >
+                          {showAllMedia
+                            ? "Show less"
+                            : `View all media (${total})`}
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </motion.section>
           </div>
         )}
       </div>
