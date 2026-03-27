@@ -52,15 +52,19 @@ export default function AdminSettingsPage() {
               </div>
 
               <div className="rounded-2xl border border-gray-200 bg-white p-5">
-                <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
+                <label
+                  htmlFor="cv-upload"
+                  className="block text-sm font-medium text-gray-700 Ovo mb-2"
+                >
                   Upload new CV
                 </label>
                 <input
                   type="file"
                   name="cv"
+                  id="cv-upload"
                   accept=".pdf,.doc,.docx"
                   className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
-                />
+                />{" "}
                 <p className="text-xs text-gray-500 Ovo mt-2">
                   Recommended: PDF.
                 </p>
@@ -81,7 +85,11 @@ export default function AdminSettingsPage() {
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 text-sm text-gray-800"
                 >
                   <span className="Ovo">{tag}</span>
-                  <button type="button" className="text-gray-500">
+                  <button
+                    type="button"
+                    className="text-gray-500"
+                    aria-label={`Remove ${tag}`}
+                  >
                     ×
                   </button>
                 </span>
@@ -93,6 +101,7 @@ export default function AdminSettingsPage() {
                 type="text"
                 name="newTag"
                 placeholder="Add a tag (e.g. PostgreSQL)"
+                aria-label="New tag name"
                 className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
               />
               <button

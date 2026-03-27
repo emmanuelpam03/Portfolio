@@ -9,6 +9,28 @@ const ABOUT_HEADING_DEFAULT = "About Me";
 const ABOUT_BODY_DEFAULT =
   "I am an experienced Front-End Developer with a strong passion for creating visually appealing and user-friendly websites. I specialize in building responsive web applications that deliver seamless user experiences across various devices. I am proficient in modern frameworks such as React and Next.js.";
 
+const toolLabelFromSrc = (src, fallback) => {
+  const raw =
+    typeof src === "string"
+      ? src
+      : typeof src === "object" && src && "src" in src
+        ? src.src
+        : "";
+
+  const filename = raw.split("/").pop() || "";
+  const base = filename.replace(/\.[^.]+$/, "");
+  if (!base) return fallback;
+
+  const pretty = base
+    .replace(/[-_]+/g, " ")
+    .replace(/\bjs\b/gi, "JS")
+    .replace(/\bts\b/gi, "TS")
+    .replace(/\bvscode\b/gi, "VS Code")
+    .trim();
+
+  return pretty ? pretty.replace(/\b\w/g, (c) => c.toUpperCase()) : fallback;
+};
+
 export default function AdminAboutPage() {
   return (
     <div className="max-w-6xl mx-auto">
@@ -280,37 +302,45 @@ export default function AdminAboutPage() {
               </div>
 
               <div className="mt-6 flex items-center justify-start flex-wrap gap-3">
-                {toolsData.map((tool, index) => (
-                  <div key={`tool-${index}`} className="group relative">
-                    <button
-                      type="button"
-                      className="relative w-14 h-14 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 shadow-md hover:shadow-xl flex items-center justify-center transition-all duration-300 overflow-hidden"
-                      aria-label={`Tool ${index + 1}`}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <Image
-                        src={tool}
-                        alt="Tool"
-                        className="relative z-10 w-7 h-7 object-contain"
-                      />
-                    </button>
+                {toolsData.map((tool, index) =>
+                  (() => {
+                    const toolName = toolLabelFromSrc(
+                      tool,
+                      `Tool ${index + 1}`,
+                    );
+                    return (
+                      <div key={`tool-${index}`} className="group relative">
+                        <button
+                          type="button"
+                          className="relative w-14 h-14 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 shadow-md hover:shadow-xl flex items-center justify-center transition-all duration-300 overflow-hidden"
+                          aria-label={`${toolName} (edit)`}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <Image
+                            src={tool}
+                            alt={`${toolName} logo`}
+                            className="relative z-10 w-7 h-7 object-contain"
+                          />
+                        </button>
 
-                    <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute left-1/2 -translate-x-1/2 -bottom-2 translate-y-full flex gap-2">
-                      <button
-                        type="button"
-                        className="pointer-events-auto px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 text-xs font-medium"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="pointer-events-auto px-3 py-1.5 rounded-full border border-gray-200 bg-white text-red-600 text-xs font-medium"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                        <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-200 absolute left-1/2 -translate-x-1/2 -bottom-2 translate-y-full flex gap-2">
+                          <button
+                            type="button"
+                            className="pointer-events-auto px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 text-xs font-medium"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="pointer-events-auto px-3 py-1.5 rounded-full border border-gray-200 bg-white text-red-600 text-xs font-medium"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })(),
+                )}
               </div>
 
               <div className="mt-5 rounded-2xl border border-gray-200 bg-gradient-to-r from-blue-50/60 to-purple-50/60 p-4">
