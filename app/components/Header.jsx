@@ -47,7 +47,6 @@ const Header = () => {
                   alt=""
                   className="w-5"
                   priority
-                  loading="eager"
                 />
               </motion.span>
             </h3>

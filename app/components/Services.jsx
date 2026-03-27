@@ -89,7 +89,7 @@ const Services = () => {
               </p>
 
               {/* Read More Link */}
-              <a
+              {/* <Link
                 href={link}
                 className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 group-hover:text-purple-600 mt-4 group-hover:gap-3 transition-all duration-300"
               >
@@ -99,7 +99,7 @@ const Services = () => {
                   alt=""
                   className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300"
                 />
-              </a>
+              </Li> */}
             </div>
 
             {/* Bottom accent line */}

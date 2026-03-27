@@ -1,5 +1,6 @@
 import { assets } from "@/assets/assets";
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 
 const Footer = () => {
@@ -17,19 +18,19 @@ const Footer = () => {
         <p>© 2025 Emmanuel Pam. All rights reserved.</p>
         <ul className="flex items-center gap-10 justify-center mt-4 sm:mt-0">
           <li>
-            <a target="_blank" href="https://github.com/emmanuelpam03">
+            <Link target="_blank" href="https://github.com/emmanuelpam03">
               Github
-            </a>
+            </Link>
           </li>
           <li>
-            <a target="_blank" href="">
+            <Link target="_blank" href="">
               LinkedIn
-            </a>
+            </Link>
           </li>
           <li>
-            <a target="_blank" href="">
+            <Link target="_blank" href="">
               Instagram
-            </a>
+            </Link>
           </li>
         </ul>
       </div>

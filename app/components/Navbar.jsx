@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { assets } from "@/assets/assets";
 import { motion, AnimatePresence } from "motion/react";
+import Link from "next/link";
 
 const Navbar = () => {
   const [isScroll, setIsScroll] = useState(false);
@@ -28,17 +29,19 @@ const Navbar = () => {
         setIsScroll(false);
       }
 
+      // When the user is near the very top, always mark Home as active.
+      if (window.scrollY <= 10) {
+        setActiveSection("top");
+        return;
+      }
+
       // Detect active section
-      const sections = ["top", "about", "services", "work", "contact"];
+      const sections = ["about", "services", "work", "contact"];
       const current = sections.find((section) => {
-        const element = document.getElementById(
-          section === "top" ? "" : section,
-        );
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          return rect.top <= 150 && rect.bottom >= 150;
-        }
-        return false;
+        const element = document.getElementById(section);
+        if (!element) return false;
+        const rect = element.getBoundingClientRect();
+        return rect.top <= 150 && rect.bottom >= 150;
       });
       if (current) setActiveSection(current);
     };
@@ -107,7 +110,7 @@ const Navbar = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
             >
-              <a
+              <Link
                 className={`Ovo px-4 py-2 rounded-full transition-all duration-300 relative group ${
                   activeSection === item.id
                     ? "text-blue-600 font-semibold"
@@ -124,7 +127,7 @@ const Navbar = () => {
                   />
                 )}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 group-hover:w-full transition-all duration-300"></span>
-              </a>
+              </Link>
             </motion.li>
           ))}
         </ul>
@@ -191,7 +194,7 @@ const Navbar = () => {
               animate={{ x: 0, opacity: 1 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
             >
-              <a
+              <Link
                 className={`Ovo block px-4 py-3 rounded-xl transition-all duration-300 ${
                   activeSection === item.id
                     ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold shadow-lg"
@@ -201,7 +204,7 @@ const Navbar = () => {
                 href={item.href}
               >
                 {item.label}
-              </a>
+              </Link>
             </motion.li>
           ))}
 

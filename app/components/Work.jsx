@@ -1,7 +1,16 @@
 import { assets, workData } from "@/assets/assets";
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 import { motion } from "motion/react";
+
+const slugify = (value) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 
 const Work = () => {
   return (
@@ -25,7 +34,9 @@ const Work = () => {
           className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200 mb-4"
         >
           <span className="text-xl">💼</span>
-          <span className="text-sm font-medium text-gray-700 Ovo">My Portfolio</span>
+          <span className="text-sm font-medium text-gray-700 Ovo">
+            My Portfolio
+          </span>
         </motion.div>
 
         <motion.h2
@@ -43,8 +54,8 @@ const Work = () => {
           transition={{ duration: 0.5, delay: 0.7 }}
           className="text-gray-600 max-w-2xl mx-auto text-base sm:text-lg Ovo leading-relaxed"
         >
-          A selection of recent projects showcasing my approach to building fast,
-          responsive, and user-focused web interfaces.
+          A selection of recent projects showcasing my approach to building
+          fast, responsive, and user-focused web interfaces.
         </motion.p>
       </div>
 
@@ -64,8 +75,13 @@ const Work = () => {
             key={index}
             className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500"
           >
+            <Link
+              href={`/projects/${slugify(project.title)}`}
+              className="absolute inset-0"
+              aria-label={`View ${project.title}`}
+            />
             {/* Background Image */}
-            <div 
+            <div
               className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-110"
               style={{ backgroundImage: `url(${project.bgImage})` }}
             />
@@ -88,13 +104,13 @@ const Work = () => {
                       {project.description}
                     </p>
                   </div>
-                  
+
                   {/* Action Button */}
                   <div className="flex-shrink-0 w-11 h-11 rounded-full border-2 border-gray-800 flex items-center justify-center shadow-[3px_3px_0_#000] group-hover:shadow-[5px_5px_0_#000] group-hover:bg-gradient-to-br group-hover:from-blue-400 group-hover:to-purple-400 group-hover:border-transparent transition-all duration-300">
-                    <Image 
-                      src={assets.send_icon} 
-                      alt="View project" 
-                      className="w-5 h-5 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" 
+                    <Image
+                      src={assets.send_icon}
+                      alt="View project"
+                      className="w-5 h-5 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300"
                     />
                   </div>
                 </div>
@@ -119,12 +135,16 @@ const Work = () => {
         transition={{ duration: 0.5, delay: 1.1 }}
         className="flex justify-center"
       >
-        <motion.a
+        <motion.div
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          href=""
           className="group relative px-8 py-4 bg-white border-2 border-gray-300 rounded-full font-medium text-gray-700 hover:border-purple-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 shadow-md hover:shadow-xl flex items-center gap-3 overflow-hidden"
         >
+          <Link
+            href="/projects"
+            className="absolute inset-0"
+            aria-label="Show more projects"
+          />
           {/* Animated background on hover */}
           <span className="relative z-10 flex items-center gap-3">
             Show More Projects
@@ -134,7 +154,7 @@ const Work = () => {
               className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300"
             />
           </span>
-        </motion.a>
+        </motion.div>
       </motion.div>
 
       {/* Bottom decorative element */}
