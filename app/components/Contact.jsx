@@ -1,33 +1,30 @@
 import { assets } from "@/assets/assets";
 import Image from "next/image";
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "motion/react";
+import { useActionState, useEffect, useRef } from "react";
+
+import { submitContact } from "@/app/actions/contact";
+
+const initialState = {
+  success: false,
+  message: "",
+  fields: { name: "", email: "", message: "" },
+  errors: {},
+};
 
 const Contact = () => {
-  const [result, setResult] = useState("");
+  const [state, formAction, isPending] = useActionState(
+    submitContact,
+    initialState,
+  );
 
-  const onSubmit = async (event) => {
-    event.preventDefault();
-    setResult("Sending....");
-    const formData = new FormData(event.target);
-
-    formData.append("access_key", "c6ee54e8-947d-4418-904c-fe4b7adb622a");
-
-    const response = await fetch("https://api.web3forms.com/submit", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      setResult("Form Submitted Successfully");
-      event.target.reset();
-    } else {
-      console.log("Error", data);
-      setResult(data.message);
+  const formRef = useRef(null);
+  useEffect(() => {
+    if (state?.success) {
+      formRef.current?.reset();
     }
-  };
+  }, [state?.success]);
 
   return (
     <motion.div
@@ -68,9 +65,25 @@ const Contact = () => {
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.9 }}
-        onSubmit={onSubmit}
+        action={formAction}
+        ref={formRef}
+        noValidate
         className="max-w-2xl mx-auto"
       >
+        {state?.message ? (
+          <div
+            className={`mb-6 rounded-xl border px-4 py-3 Ovo ${
+              state?.success
+                ? "border-green-200 bg-green-50 text-green-800"
+                : "border-red-200 bg-red-50 text-red-700"
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            {state.message}
+          </div>
+        ) : null}
+
         <div className="grid gridAuto gap-6 mt-10 mb-8">
           <motion.input
             initial={{ x: -50, opacity: 0 }}
@@ -78,20 +91,32 @@ const Contact = () => {
             transition={{ duration: 0.6, delay: 1.1 }}
             type="text"
             placeholder="Enter your name"
-            required
-            className="flex-1 p-3 outline-none border-[0.5px] border-gray-400 rounded-md bg-white"
+            className={`flex-1 p-3 outline-none border-[0.5px] rounded-md bg-white ${
+              state?.errors?.name?.[0] ? "border-red-400" : "border-gray-400"
+            }`}
             name="name"
           />
+          {state?.errors?.name?.[0] && (
+            <p className="-mt-4 text-sm text-red-600 Ovo">
+              {state.errors.name[0]}
+            </p>
+          )}
           <motion.input
             initial={{ x: 50, opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 1.1 }}
             type="email"
             placeholder="Enter your email"
-            required
-            className="flex-1 p-3 outline-none border-[0.5px] border-gray-400 rounded-md bg-white"
+            className={`flex-1 p-3 outline-none border-[0.5px] rounded-md bg-white ${
+              state?.errors?.email?.[0] ? "border-red-400" : "border-gray-400"
+            }`}
             name="email"
           />
+          {state?.errors?.email?.[0] && (
+            <p className="-mt-4 text-sm text-red-600 Ovo">
+              {state.errors.email[0]}
+            </p>
+          )}
         </div>
         <motion.textarea
           initial={{ y: 100, opacity: 0 }}
@@ -99,22 +124,27 @@ const Contact = () => {
           transition={{ duration: 0.6, delay: 1.3 }}
           rows="6"
           placeholder="Enter your message"
-          required
-          className="w-full p-4 outline-none border-[0.5px] border-gray-400 rounded-md bg-white mb-6"
+          className={`w-full p-4 outline-none border-[0.5px] rounded-md bg-white mb-2 ${
+            state?.errors?.message?.[0] ? "border-red-400" : "border-gray-400"
+          }`}
           name="message"
         />
+        {state?.errors?.message?.[0] && (
+          <p className="mb-4 text-sm text-red-600 Ovo">
+            {state.errors.message[0]}
+          </p>
+        )}
 
         <motion.button
           whileHover={{ scale: 1.05 }}
           transition={{ duration: 0.3 }}
           type="submit"
+          disabled={isPending}
           className="py-3 px-8 w-max flex items-center justify-between gap-2 bg-black/80 text-white rounded-full mx-auto darkHover duration-500 cursor-pointer"
         >
-          Submit now
+          {isPending ? "Sending...." : "Submit now"}
           <Image src={assets.right_arrow_white} alt="" className="w-4" />
         </motion.button>
-
-        <p className="mt-4">{result}</p>
       </motion.form>
     </motion.div>
   );
