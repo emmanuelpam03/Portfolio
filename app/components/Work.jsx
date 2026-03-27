@@ -77,7 +77,7 @@ const Work = () => {
           >
             <Link
               href={`/projects/${slugify(project.title)}`}
-              className="absolute inset-0"
+              className="absolute inset-0 z-10"
               aria-label={`View ${project.title}`}
             />
             {/* Background Image */}

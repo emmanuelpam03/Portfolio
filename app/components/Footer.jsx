@@ -18,17 +18,21 @@ const Footer = () => {
         <p>© 2025 Emmanuel Pam. All rights reserved.</p>
         <ul className="flex items-center gap-10 justify-center mt-4 sm:mt-0">
           <li>
-            <Link target="_blank" href="https://github.com/emmanuelpam03">
+            <Link
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://github.com/emmanuelpam03"
+            >
               Github
             </Link>
           </li>
           <li>
-            <Link target="_blank" href="">
+            <Link target="_blank" rel="noopener noreferrer" href="">
               LinkedIn
             </Link>
           </li>
           <li>
-            <Link target="_blank" href="">
+            <Link target="_blank" rel="noopener noreferrer" href="">
               Instagram
             </Link>
           </li>
