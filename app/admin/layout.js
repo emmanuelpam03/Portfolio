@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import AdminSidebar from "@/app/admin/AdminSidebar";
+import AdminMobileMenu from "@/app/admin/AdminMobileMenu";
 
 export const metadata = {
   title: "Admin | Portfolio",
@@ -17,7 +18,9 @@ export default function AdminLayout({ children }) {
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
           {/* Sidebar */}
           <aside className="lg:sticky lg:top-24 h-fit">
-            <AdminSidebar />
+            <div className="hidden lg:block">
+              <AdminSidebar />
+            </div>
           </aside>
 
           {/* Main */}
@@ -28,12 +31,17 @@ export default function AdminLayout({ children }) {
                 <p className="text-sm font-semibold text-gray-900 Ovo">Admin</p>
                 <p className="text-xs text-gray-600 Ovo">Design-only</p>
               </div>
-              <Link
-                href="/"
-                className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
-              >
-                Back to site
-              </Link>
+
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/"
+                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                >
+                  Back to site
+                </Link>
+
+                <AdminMobileMenu />
+              </div>
             </div>
 
             {children}

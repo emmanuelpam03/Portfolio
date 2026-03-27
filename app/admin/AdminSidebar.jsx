@@ -72,7 +72,9 @@ export default function AdminSidebar() {
               </span>
               <span
                 className={`ml-auto transition-colors ${
-                  active ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
+                  active
+                    ? "text-blue-700"
+                    : "text-gray-400 group-hover:text-blue-700"
                 }`}
               >
                 →
