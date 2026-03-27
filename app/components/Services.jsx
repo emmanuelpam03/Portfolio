@@ -121,7 +121,7 @@ const Services = () => {
               Have a project in mind?
             </h3>
             <p className="text-gray-600 text-sm sm:text-base">
-              Let's work together to bring your ideas to life
+              Let&apos;s work together to bring your ideas to life
             </p>
           </div>
           <motion.a

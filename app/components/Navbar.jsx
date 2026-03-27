@@ -30,8 +30,10 @@ const Navbar = () => {
 
       // Detect active section
       const sections = ["top", "about", "services", "work", "contact"];
-      const current = sections.find(section => {
-        const element = document.getElementById(section === "top" ? "" : section);
+      const current = sections.find((section) => {
+        const element = document.getElementById(
+          section === "top" ? "" : section,
+        );
         if (element) {
           const rect = element.getBoundingClientRect();
           return rect.top <= 150 && rect.bottom >= 150;
@@ -57,7 +59,13 @@ const Navbar = () => {
     <>
       {/* Background Gradient */}
       <div className="fixed top-0 right-0 w-11/12 -z-10 translate-y-[-80%]">
-        <Image src={assets.header_bg_color} alt="" className="w-full" />
+        <Image
+          src={assets.header_bg_color}
+          alt=""
+          className="w-full"
+          priority
+          loading="eager"
+        />
       </div>
 
       {/* Main Navbar */}
@@ -66,13 +74,13 @@ const Navbar = () => {
         animate={{ y: 0 }}
         transition={{ duration: 0.5 }}
         className={`w-full fixed px-5 lg:px-8 xl:px-[8%] py-4 flex items-center justify-between z-50 transition-all duration-300 ${
-          isScroll 
-            ? "bg-white/80 backdrop-blur-xl shadow-lg border-b border-gray-200" 
+          isScroll
+            ? "bg-white/80 backdrop-blur-xl shadow-lg border-b border-gray-200"
             : ""
         }`}
       >
         {/* Logo */}
-        <motion.a 
+        <motion.a
           href="#top"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -87,8 +95,8 @@ const Navbar = () => {
         {/* Desktop Menu */}
         <ul
           className={`hidden md:flex items-center gap-2 lg:gap-3 rounded-full px-6 py-3 transition-all duration-300 ${
-            isScroll 
-              ? "bg-transparent" 
+            isScroll
+              ? "bg-transparent"
               : "bg-white/70 backdrop-blur-md shadow-md border border-gray-200"
           }`}
         >
@@ -172,11 +180,7 @@ const Navbar = () => {
             className="absolute right-6 top-6 w-10 h-10 bg-gradient-to-br from-red-100 to-pink-100 rounded-lg flex items-center justify-center cursor-pointer shadow-md"
             onClick={closeMenu}
           >
-            <Image
-              src={assets.close_black}
-              alt="Close"
-              className="w-4"
-            />
+            <Image src={assets.close_black} alt="Close" className="w-4" />
           </motion.div>
 
           {/* Mobile Menu Items */}

@@ -42,7 +42,13 @@ const Header = () => {
                 animate={{ rotate: [0, 14, -8, 14, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
               >
-                <Image src={assets.hand_icon} alt="" className="w-5" />
+                <Image
+                  src={assets.hand_icon}
+                  alt=""
+                  className="w-5"
+                  priority
+                  loading="eager"
+                />
               </motion.span>
             </h3>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl Ovo font-bold leading-tight">
@@ -95,7 +101,7 @@ const Header = () => {
               href="#contact"
               className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center gap-2 font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-sm"
             >
-              <span>Let's Talk</span>
+              <span>Let&apos;s Talk</span>
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -138,7 +144,7 @@ const Header = () => {
                 >
                   {tech}
                 </span>
-              )
+              ),
             )}
           </motion.div>
         </div>
@@ -162,6 +168,8 @@ const Header = () => {
                 src={assets.profile_img}
                 alt="Emmanuel Pam"
                 className="w-full h-full object-cover"
+                priority
+                loading="eager"
               />
             </div>
           </div>
