@@ -64,7 +64,7 @@ export default function AdminSettingsPage() {
                   id="cv-upload"
                   accept=".pdf,.doc,.docx"
                   className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
-                />{" "}
+                />
                 <p className="text-xs text-gray-500 Ovo mt-2">
                   Recommended: PDF.
                 </p>

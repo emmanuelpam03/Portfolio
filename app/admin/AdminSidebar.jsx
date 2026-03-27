@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import AdminLogoutButton from "@/app/admin/AdminLogoutButton";
+
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: "🏠" },
   { label: "Projects", href: "/admin/projects", icon: "📁" },
@@ -93,6 +95,10 @@ export default function AdminSidebar() {
         <p className="text-xs text-gray-500 Ovo mt-1">
           You’ll receive them directly via email.
         </p>
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <AdminLogoutButton />
       </div>
     </div>
   );
