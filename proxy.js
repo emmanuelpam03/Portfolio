@@ -16,12 +16,14 @@ export async function proxy(request) {
   const { pathname } = request.nextUrl;
 
   if (!pathname.startsWith("/admin")) return NextResponse.next();
-  if (pathname === "/admin/login" || pathname.startsWith("/admin/verify")) {
-    return NextResponse.next();
-  }
+  const isAuthPage =
+    pathname === "/admin/login" ||
+    pathname === "/admin/verify" ||
+    pathname.startsWith("/admin/verify-link");
 
   const sessionToken = request.cookies.get("admin_session")?.value;
   if (!sessionToken) {
+    if (isAuthPage) return NextResponse.next();
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
     return NextResponse.redirect(url);
@@ -29,6 +31,7 @@ export async function proxy(request) {
 
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
+    if (isAuthPage) return NextResponse.next();
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
     return NextResponse.redirect(url);
@@ -56,6 +59,13 @@ export async function proxy(request) {
       expires: new Date(0),
     });
     return response;
+  }
+
+  // Logged in: keep auth pages inaccessible.
+  if (isAuthPage) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/admin";
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
