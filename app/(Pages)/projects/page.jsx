@@ -70,7 +70,7 @@ const ProjectsPage = () => {
             <motion.div
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
-              className="px-7 py-3.5 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center gap-2 font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-sm"
+              className="relative px-7 py-3.5 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center gap-2 font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-sm"
             >
               <Link
                 href="/#contact"
@@ -92,7 +92,6 @@ const ProjectsPage = () => {
                 />
               </svg>
             </motion.div>
-
             <motion.div
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
@@ -133,7 +132,7 @@ const ProjectsPage = () => {
             >
               <Link
                 href={`/projects/${slugify(project.title)}`}
-                className="absolute inset-0"
+                className="absolute inset-0 z-10"
                 aria-label={`View ${project.title}`}
               />
               {/* Background Image */}

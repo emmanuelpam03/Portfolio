@@ -75,11 +75,6 @@ const Work = () => {
             key={index}
             className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500"
           >
-            <Link
-              href={`/projects/${slugify(project.title)}`}
-              className="absolute inset-0 z-10"
-              aria-label={`View ${project.title}`}
-            />
             {/* Background Image */}
             <div
               className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-110"
@@ -97,22 +92,32 @@ const Work = () => {
               <div className="bg-white/95 backdrop-blur-sm rounded-xl p-5 shadow-2xl">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h2 className="font-bold text-lg text-gray-800 mb-1 group-hover:text-blue-600 transition-colors duration-300">
-                      {project.title}
-                    </h2>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {project.description}
-                    </p>
+                    <Link
+                      href={`/projects/${slugify(project.title)}`}
+                      aria-label={`View ${project.title}`}
+                      className="block"
+                    >
+                      <h2 className="font-bold text-lg text-gray-800 mb-1 group-hover:text-blue-600 transition-colors duration-300">
+                        {project.title}
+                      </h2>
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        {project.description}
+                      </p>
+                    </Link>
                   </div>
 
                   {/* Action Button */}
-                  <div className="flex-shrink-0 w-11 h-11 rounded-full border-2 border-gray-800 flex items-center justify-center shadow-[3px_3px_0_#000] group-hover:shadow-[5px_5px_0_#000] group-hover:bg-gradient-to-br group-hover:from-blue-400 group-hover:to-purple-400 group-hover:border-transparent transition-all duration-300">
+                  <Link
+                    href={`/projects/${slugify(project.title)}`}
+                    aria-label={`View ${project.title}`}
+                    className="flex-shrink-0 w-11 h-11 rounded-full border-2 border-gray-800 flex items-center justify-center shadow-[3px_3px_0_#000] group-hover:shadow-[5px_5px_0_#000] group-hover:bg-gradient-to-br group-hover:from-blue-400 group-hover:to-purple-400 group-hover:border-transparent transition-all duration-300"
+                  >
                     <Image
                       src={assets.send_icon}
                       alt="View project"
                       className="w-5 h-5 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300"
                     />
-                  </div>
+                  </Link>
                 </div>
 
                 {/* Tech tags - Optional if you have tech data */}

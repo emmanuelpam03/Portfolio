@@ -53,11 +53,11 @@ const Navbar = () => {
   }, []);
 
   const navItems = [
-    { label: "Home", href: "#top", id: "top" },
-    { label: "About Me", href: "#about", id: "about" },
-    { label: "Services", href: "#services", id: "services" },
-    { label: "My Work", href: "#work", id: "work" },
-    { label: "Contact Me", href: "#contact", id: "contact" },
+    { label: "Home", href: "/#top", id: "top" },
+    { label: "About Me", href: "/#about", id: "about" },
+    { label: "Services", href: "/#services", id: "services" },
+    { label: "My Work", href: "/#work", id: "work" },
+    { label: "Contact Me", href: "/#contact", id: "contact" },
   ];
 
   return (
@@ -85,17 +85,15 @@ const Navbar = () => {
         }`}
       >
         {/* Logo */}
-        <motion.a
-          href="#top"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Image
-            src={assets.logo}
-            alt="Logo"
-            className="w-28 cursor-pointer mr-14"
-          />
-        </motion.a>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Link href="/#top" aria-label="Go to top">
+            <Image
+              src={assets.logo}
+              alt="Logo"
+              className="w-28 cursor-pointer mr-14"
+            />
+          </Link>
+        </motion.div>
 
         {/* Desktop Menu */}
         <ul
@@ -137,15 +135,19 @@ const Navbar = () => {
         {/* Right Side Actions */}
         <div className="flex items-center gap-4">
           {/* Contact Button - Desktop */}
-          <motion.a
+          <motion.div
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
-            href="#contact"
             className="hidden lg:flex items-center gap-3 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 Ovo font-medium"
           >
+            <Link
+              href="/#contact"
+              className="absolute inset-0"
+              aria-label="Contact"
+            />
             Contact
             <Image src={assets.arrow_icon} alt="" className="w-3 invert" />
-          </motion.a>
+          </motion.div>
 
           {/* Mobile Menu Button */}
           <motion.button
@@ -171,7 +173,6 @@ const Navbar = () => {
             />
           )}
         </AnimatePresence>
-
         {/* Mobile Menu */}
         <motion.ul
           ref={sideMenuRef}
