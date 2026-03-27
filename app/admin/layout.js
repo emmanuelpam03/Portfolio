@@ -14,11 +14,11 @@ export default function AdminLayout({ children }) {
       <div className="absolute top-32 right-10 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl" />
       <div className="absolute bottom-40 left-10 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl" />
 
-      <div className="relative w-full px-[6%] sm:px-[8%] lg:px-[10%] xl:px-[12%] pt-10 pb-16">
+      <div className="relative w-full px-[6%] sm:px-[8%] pt-10 pb-16">
         <div className="max-w-7xl mx-auto">
-          {/* Desktop fixed sidebar (fixed to viewport left for consistent alignment) */}
-          <aside className="hidden lg:block fixed left-0 top-24 w-[320px] pl-[10%] xl:pl-[12%] pr-6">
-            <div className="w-[280px]">
+          {/* Desktop fixed sidebar aligned to container */}
+          <aside className="hidden lg:block fixed top-24 left-1/2 -translate-x-1/2 w-full max-w-7xl pointer-events-none">
+            <div className="admin-scroll pointer-events-auto w-[280px] max-h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-6">
               <AdminSidebar />
             </div>
           </aside>

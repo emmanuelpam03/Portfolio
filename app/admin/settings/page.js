@@ -20,6 +20,91 @@ export default function AdminSettingsPage() {
           Manage website content like socials, hero text, and about details.
         </p>
 
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+          <div className="lg:col-span-2 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">CV</h3>
+            <p className="text-sm text-gray-600 Ovo mb-5">
+              Upload/replace your resume file (design-only).
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="rounded-2xl border border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 p-5">
+                <p className="text-sm font-medium text-gray-800 Ovo">
+                  Current file
+                </p>
+                <p className="text-xs text-gray-600 Ovo mt-1">
+                  No file connected yet.
+                </p>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium"
+                  >
+                    View
+                  </button>
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-red-600 text-sm font-medium"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-white p-5">
+                <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
+                  Upload new CV
+                </label>
+                <input
+                  type="file"
+                  name="cv"
+                  accept=".pdf,.doc,.docx"
+                  className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
+                />
+                <p className="text-xs text-gray-500 Ovo mt-2">
+                  Recommended: PDF.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Tech tags</h3>
+            <p className="text-sm text-gray-600 Ovo mb-5">
+              Edit the pill tags shown on the homepage (design-only).
+            </p>
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              {["React", "Next.js", "Tailwind", "Node.js"].map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 text-sm text-gray-800"
+                >
+                  <span className="Ovo">{tag}</span>
+                  <button type="button" className="text-gray-500">
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              <input
+                type="text"
+                name="newTag"
+                placeholder="Add a tag (e.g. PostgreSQL)"
+                className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
+              />
+              <button
+                type="button"
+                className="w-full px-5 py-3 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+              >
+                Add tag
+              </button>
+            </div>
+          </div>
+        </div>
+
         <form className="grid grid-cols-1 gap-5" noValidate>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
