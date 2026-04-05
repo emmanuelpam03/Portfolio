@@ -66,29 +66,6 @@ const RECENT_ACTIVITY = [
   { title: "Signed in", detail: "Auth", when: "—" },
 ];
 
-const HEALTH = [
-  {
-    title: "Database",
-    status: "Pending",
-    hint: "Connect Neon tables for content storage",
-  },
-  {
-    title: "Email (Resend)",
-    status: "Pending",
-    hint: "Used for admin magic-link sign-in",
-  },
-  {
-    title: "Auth",
-    status: "Enabled",
-    hint: "Admin-only access is enforced",
-  },
-  {
-    title: "Deployment",
-    status: "Pending",
-    hint: "Set env vars in your hosting dashboard",
-  },
-];
-
 const NEEDS_ATTENTION = [
   { title: "Projects missing cover image", value: "—" },
   { title: "Projects missing live URL", value: "—" },
@@ -223,36 +200,6 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="space-y-6">
-            <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 Ovo mb-1">
-                Publishing & health
-              </h3>
-              <p className="text-sm text-gray-600 Ovo">
-                Checks you’ll connect to real data soon.
-              </p>
-
-              <div className="mt-5 grid gap-3">
-                {HEALTH.map((check) => (
-                  <div
-                    key={check.title}
-                    className="rounded-2xl border border-gray-200 bg-gradient-to-r from-blue-50/60 to-purple-50/60 p-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-gray-900 Ovo">
-                        {check.title}
-                      </p>
-                      <span className="px-3 py-1 rounded-full border border-gray-200 bg-white text-gray-700 text-xs font-medium">
-                        {check.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600 Ovo mt-2">
-                      {check.hint}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
