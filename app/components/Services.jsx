@@ -1,7 +1,7 @@
-import { assets, serviceData } from "@/assets/assets";
-import Image from "next/image";
 import React from "react";
 import { motion } from "motion/react";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { serviceData } from "@/assets/assets";
 
 const Services = () => {
   return (
@@ -24,8 +24,8 @@ const Services = () => {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-purple-50 to-blue-50 rounded-full border border-purple-200 mb-4"
         >
-          <span className="text-xl">✨</span>
-          <span className="text-sm font-medium text-gray-700 Ovo">
+          <Sparkles className="w-5 h-5 text-purple-700" aria-hidden="true" />
+          <span className="text-base font-medium text-gray-700 Ovo">
             What I Offer
           </span>
         </motion.div>
@@ -57,7 +57,7 @@ const Services = () => {
         transition={{ duration: 0.6, delay: 0.9 }}
         className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
       >
-        {serviceData.map(({ icon, title, link, description }, index) => (
+        {serviceData.map(({ icon: Icon, title, description }, index) => (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -75,7 +75,7 @@ const Services = () => {
             <div className="relative z-10 space-y-4">
               {/* Icon */}
               <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-md">
-                <Image src={icon} alt={title} className="w-8 h-8" />
+                <Icon className="w-8 h-8 text-gray-700" aria-hidden="true" />
               </div>
 
               {/* Title */}
@@ -84,7 +84,7 @@ const Services = () => {
               </h3>
 
               {/* Description */}
-              <p className="text-sm text-gray-600 leading-6 min-h-[3rem]">
+              <p className="text-base text-gray-600 leading-6 min-h-[3rem]">
                 {description}
               </p>
 
@@ -120,7 +120,7 @@ const Services = () => {
             <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
               Have a project in mind?
             </h3>
-            <p className="text-gray-600 text-sm sm:text-base">
+            <p className="text-gray-600 text-base sm:text-lg">
               Let&apos;s work together to bring your ideas to life
             </p>
           </div>
@@ -131,19 +131,7 @@ const Services = () => {
             className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/50 transition-all duration-300 flex items-center gap-2"
           >
             <span>Get in Touch</span>
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 8l4 4m0 0l-4 4m4-4H3"
-              />
-            </svg>
+            <ArrowRight className="w-5 h-5" aria-hidden="true" />
           </motion.a>
         </div>
       </motion.div>

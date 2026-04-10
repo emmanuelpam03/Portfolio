@@ -2,13 +2,15 @@ export const metadata = {
   title: "Admin Settings | Portfolio",
 };
 
+import { Settings, X } from "lucide-react";
+
 export default function AdminSettingsPage() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-2xl p-7 sm:p-10">
         <div className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200 mb-5">
-          <span className="text-xl">⚙️</span>
-          <span className="text-sm font-medium text-gray-700 Ovo">
+          <Settings className="w-4 h-4 text-blue-700" aria-hidden="true" />
+          <span className="text-base font-medium text-gray-800 Ovo">
             Settings
           </span>
         </div>
@@ -23,28 +25,28 @@ export default function AdminSettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
           <div className="lg:col-span-2 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-1">CV</h3>
-            <p className="text-sm text-gray-600 Ovo mb-5">
+            <p className="text-base text-gray-700 Ovo mb-5">
               Upload/replace your resume file (design-only).
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="rounded-2xl border border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 p-5">
-                <p className="text-sm font-medium text-gray-800 Ovo">
+                <p className="text-base font-medium text-gray-800 Ovo">
                   Current file
                 </p>
-                <p className="text-xs text-gray-600 Ovo mt-1">
+                <p className="text-sm text-gray-600 Ovo mt-1">
                   No file connected yet.
                 </p>
                 <div className="mt-4 flex gap-2">
                   <button
                     type="button"
-                    className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-base font-medium"
                   >
                     View
                   </button>
                   <button
                     type="button"
-                    className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-red-600 text-sm font-medium"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-red-600 text-base font-medium"
                   >
                     Remove
                   </button>
@@ -65,7 +67,7 @@ export default function AdminSettingsPage() {
                   accept=".pdf,.doc,.docx"
                   className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
                 />
-                <p className="text-xs text-gray-500 Ovo mt-2">
+                <p className="text-sm text-gray-600 Ovo mt-2">
                   Recommended: PDF.
                 </p>
               </div>
@@ -74,7 +76,7 @@ export default function AdminSettingsPage() {
 
           <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-1">Tech tags</h3>
-            <p className="text-sm text-gray-600 Ovo mb-5">
+            <p className="text-base text-gray-700 Ovo mb-5">
               Edit the pill tags shown on the homepage (design-only).
             </p>
 
@@ -87,10 +89,10 @@ export default function AdminSettingsPage() {
                   <span className="Ovo">{tag}</span>
                   <button
                     type="button"
-                    className="text-gray-500"
+                    className="text-gray-600 hover:text-gray-800"
                     aria-label={`Remove ${tag}`}
                   >
-                    ×
+                    <X className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </span>
               ))}
@@ -106,7 +108,7 @@ export default function AdminSettingsPage() {
               />
               <button
                 type="button"
-                className="w-full px-5 py-3 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                className="w-full px-5 py-3 rounded-full border border-gray-200 bg-white text-gray-700 text-base font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
               >
                 Add tag
               </button>

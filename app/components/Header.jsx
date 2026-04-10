@@ -2,6 +2,7 @@ import { assets } from "@/assets/assets";
 import Image from "next/image";
 import React from "react";
 import { motion } from "motion/react";
+import { ArrowRight, Briefcase, Download, Hand, MapPin } from "lucide-react";
 
 const Header = () => {
   return (
@@ -25,7 +26,7 @@ const Header = () => {
             className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-gray-200 shadow-sm"
           >
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            <span className="text-sm text-gray-600 font-medium">
+            <span className="text-base text-gray-600 font-medium">
               Available for work
             </span>
           </motion.div>
@@ -42,12 +43,7 @@ const Header = () => {
                 animate={{ rotate: [0, 14, -8, 14, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
               >
-                <Image
-                  src={assets.hand_icon}
-                  alt=""
-                  className="w-5"
-                  priority
-                />
+                <Hand className="w-5 h-5 text-gray-600" aria-hidden="true" />
               </motion.span>
             </h3>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl Ovo font-bold leading-tight">
@@ -66,13 +62,7 @@ const Header = () => {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="flex items-center gap-2 text-blue-600 font-medium justify-center lg:justify-start"
           >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <MapPin className="w-5 h-5" aria-hidden="true" />
             <span>Based in Mauritius</span>
           </motion.div>
 
@@ -81,7 +71,7 @@ const Header = () => {
             initial={{ x: -50, opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.8 }}
-            className="text-gray-600 text-sm sm:text-base leading-relaxed max-w-xl"
+            className="text-gray-600 text-base sm:text-lg leading-relaxed max-w-xl"
           >
             I build clean, user-friendly interfaces using modern frameworks like
             React and Next.js.
@@ -98,22 +88,10 @@ const Header = () => {
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
               href="#contact"
-              className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center gap-2 font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-sm"
+              className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center gap-2 font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-base"
             >
               <span>Let&apos;s Talk</span>
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
+              <ArrowRight className="w-5 h-5" aria-hidden="true" />
             </motion.a>
 
             <motion.a
@@ -121,9 +99,9 @@ const Header = () => {
               whileTap={{ scale: 0.95 }}
               href="/sample-resume.pdf"
               download
-              className="px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 flex items-center gap-2 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-sm"
+              className="px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 flex items-center gap-2 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-base"
             >
-              <Image src={assets.download_icon} alt="" className="w-4" />
+              <Download className="w-4 h-4" aria-hidden="true" />
               <span>Download CV</span>
             </motion.a>
           </motion.div>
@@ -139,7 +117,7 @@ const Header = () => {
               (tech, index) => (
                 <span
                   key={tech}
-                  className="px-3 py-1.5 bg-gradient-to-r from-blue-50 to-purple-50 text-gray-700 rounded-full text-xs font-medium border border-gray-200"
+                  className="px-3 py-1.5 bg-gradient-to-r from-blue-50 to-purple-50 text-gray-700 rounded-full text-sm font-medium border border-gray-200"
                 >
                   {tech}
                 </span>
@@ -180,10 +158,10 @@ const Header = () => {
             transition={{ duration: 0.8, delay: 1.5 }}
             className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-white rounded-full shadow-lg border border-gray-200 flex items-center gap-2"
           >
-            <span className="text-xl">💼</span>
+            <Briefcase className="w-5 h-5 text-gray-700" aria-hidden="true" />
             <div className="text-left">
-              <p className="text-[10px] text-gray-500">Open to</p>
-              <p className="text-xs font-semibold text-gray-800">
+              <p className="text-xs text-gray-500">Open to</p>
+              <p className="text-sm font-semibold text-gray-800">
                 Opportunities
               </p>
             </div>

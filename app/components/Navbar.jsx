@@ -5,6 +5,7 @@ import Image from "next/image";
 import { assets } from "@/assets/assets";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
+import { ArrowRight, Menu, X } from "lucide-react";
 
 const Navbar = () => {
   const [isScroll, setIsScroll] = useState(false);
@@ -146,7 +147,7 @@ const Navbar = () => {
               aria-label="Contact"
             />
             Contact
-            <Image src={assets.arrow_icon} alt="" className="w-3 invert" />
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </motion.div>
 
           {/* Mobile Menu Button */}
@@ -156,7 +157,7 @@ const Navbar = () => {
             className="block md:hidden ml-3 w-10 h-10 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center shadow-md"
             onClick={openMenu}
           >
-            <Image src={assets.menu_black} alt="Menu" className="w-5" />
+            <Menu className="w-5 h-5 text-gray-800" aria-hidden="true" />
           </motion.button>
         </div>
 
@@ -186,7 +187,7 @@ const Navbar = () => {
             className="absolute right-6 top-6 w-10 h-10 bg-gradient-to-br from-red-100 to-pink-100 rounded-lg flex items-center justify-center cursor-pointer shadow-md"
             onClick={closeMenu}
           >
-            <Image src={assets.close_black} alt="Close" className="w-4" />
+            <X className="w-5 h-5 text-gray-800" aria-hidden="true" />
           </motion.div>
 
           {/* Mobile Menu Items */}

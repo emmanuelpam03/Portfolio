@@ -1,8 +1,7 @@
-import { assets } from "@/assets/assets";
-import Image from "next/image";
 import React from "react";
 import { motion } from "motion/react";
 import { useActionState, useEffect, useRef } from "react";
+import { ArrowRight } from "lucide-react";
 
 import { submitContact } from "@/app/actions/contact";
 
@@ -143,7 +142,7 @@ const Contact = () => {
           className="py-3 px-8 w-max flex items-center justify-between gap-2 bg-black/80 text-white rounded-full mx-auto darkHover duration-500 cursor-pointer"
         >
           {isPending ? "Sending...." : "Submit now"}
-          <Image src={assets.right_arrow_white} alt="" className="w-4" />
+          <ArrowRight className="w-4 h-4" aria-hidden="true" />
         </motion.button>
       </motion.form>
     </motion.div>

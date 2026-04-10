@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import AdminSidebar from "@/app/admin/AdminSidebar";
 import AdminMobileMenu from "@/app/admin/AdminMobileMenu";
@@ -28,27 +29,57 @@ export default function AdminShell({ children }) {
           <main
             className={`min-w-0 ${isSidebarOpen ? "lg:pl-[320px]" : ""}`}
           >
-            <div className="hidden lg:flex sticky top-6 z-50 justify-end mb-5">
-              <button
-                type="button"
-                onClick={() => setIsSidebarOpen((v) => !v)}
-                aria-expanded={isSidebarOpen}
-                className="px-4 py-2 rounded-xl border border-gray-200 bg-white/90 backdrop-blur-xl text-gray-700 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
-              >
-                {isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
-              </button>
-            </div>
-
-            <div className="lg:hidden mb-5 bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-gray-900 Ovo">Admin</p>
-                <p className="text-xs text-gray-600 Ovo">Design-only</p>
+            <div className="hidden lg:flex sticky top-6 z-50 mb-6 bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-4 items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsSidebarOpen((v) => !v)}
+                  aria-expanded={isSidebarOpen}
+                  aria-label={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
+                  title={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
+                  className="w-11 h-11 rounded-xl border border-gray-200 bg-white text-gray-700 inline-flex items-center justify-center hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                >
+                  {isSidebarOpen ? (
+                    <PanelLeftClose className="w-5 h-5" aria-hidden="true" />
+                  ) : (
+                    <PanelLeftOpen className="w-5 h-5" aria-hidden="true" />
+                  )}
+                </button>
+                <div>
+                  <p className="text-base font-semibold text-gray-900 Ovo">
+                    Admin
+                  </p>
+                  <p className="text-sm text-gray-600 Ovo">
+                    Manage your portfolio content
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <Link
                   href="/"
-                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-base font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                >
+                  Back to site
+                </Link>
+                <AdminLogoutButton />
+              </div>
+            </div>
+
+            <div className="lg:hidden mb-5 bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-base font-semibold text-gray-900 Ovo">
+                  Admin
+                </p>
+                <p className="text-sm text-gray-600 Ovo">
+                  Manage your portfolio content
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/"
+                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-base font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
                 >
                   Back to site
                 </Link>

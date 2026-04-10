@@ -2,16 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  ChevronRight,
+  Folder,
+  Home,
+  Image as ImageIcon,
+  Puzzle,
+  Settings,
+  User,
+  Wrench,
+} from "lucide-react";
 
 import AdminLogoutButton from "@/app/admin/AdminLogoutButton";
 
 const navItems = [
-  { label: "Dashboard", href: "/admin", icon: "🏠" },
-  { label: "Projects", href: "/admin/projects", icon: "📁" },
-  { label: "About", href: "/admin/about", icon: "👋" },
-  { label: "Services", href: "/admin/services", icon: "🧩" },
-  { label: "Media", href: "/admin/media", icon: "🖼️" },
-  { label: "Settings", href: "/admin/settings", icon: "⚙️" },
+  { label: "Dashboard", href: "/admin", icon: Home },
+  { label: "Projects", href: "/admin/projects", icon: Folder },
+  { label: "About", href: "/admin/about", icon: User },
+  { label: "Services", href: "/admin/services", icon: Puzzle },
+  { label: "Media", href: "/admin/media", icon: ImageIcon },
+  { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 const isActive = (pathname, href) => {
@@ -28,10 +38,12 @@ export default function AdminSidebar() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200 mb-4">
-            <span className="text-lg">🛠️</span>
-            <span className="text-sm font-medium text-gray-700 Ovo">Admin</span>
+            <Wrench className="w-4 h-4 text-blue-700" aria-hidden="true" />
+            <span className="text-base font-medium text-gray-800 Ovo">
+              Admin
+            </span>
           </div>
-          <p className="text-sm text-gray-600 Ovo">
+          <p className="text-base text-gray-700 Ovo">
             Manage all site content (except contact messages).
           </p>
         </div>
@@ -47,6 +59,7 @@ export default function AdminSidebar() {
       <nav className="mt-5 grid gap-2">
         {navItems.map((item) => {
           const active = isActive(pathname, item.href);
+          const Icon = item.icon;
           return (
             <Link
               key={item.href}
@@ -65,40 +78,44 @@ export default function AdminSidebar() {
                     : "bg-gradient-to-br from-blue-100 to-purple-100 border-gray-200"
                 }`}
               >
-                {item.icon}
+                <Icon
+                  className={`w-5 h-5 ${
+                    active ? "text-blue-800" : "text-gray-700"
+                  }`}
+                  aria-hidden="true"
+                />
               </span>
               <span
-                className={`text-sm font-medium Ovo transition-colors duration-300 ${
+                className={`text-base font-medium Ovo transition-colors duration-300 ${
                   active ? "text-blue-800" : "text-gray-800"
                 }`}
               >
                 {item.label}
               </span>
-              <span
-                className={`ml-auto transition-colors ${
+              <ChevronRight
+                className={`ml-auto w-5 h-5 transition-colors ${
                   active
                     ? "text-blue-700"
                     : "text-gray-400 group-hover:text-blue-700"
                 }`}
-              >
-                →
-              </span>
+                aria-hidden="true"
+              />
             </Link>
           );
         })}
       </nav>
 
       <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-4">
-        <p className="text-xs text-gray-600 Ovo">
+        <p className="text-sm text-gray-700 Ovo">
           Note: contact messages are not stored here.
         </p>
-        <p className="text-xs text-gray-500 Ovo mt-1">
+        <p className="text-sm text-gray-600 Ovo mt-1">
           You’ll receive them directly via email.
         </p>
       </div>
 
       <div className="mt-4 pt-4 border-t border-gray-200">
-        <AdminLogoutButton />
+        <AdminLogoutButton fullWidth />
       </div>
     </div>
   );

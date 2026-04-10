@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { motion } from "motion/react";
 
-import { assets, workData } from "@/assets/assets";
+import { workData } from "@/assets/assets";
+import { ArrowLeft, Briefcase, Search } from "lucide-react";
 
 const slugify = (value) =>
   String(value)
@@ -48,11 +49,7 @@ export default function ProjectDetailsPage() {
               className="absolute inset-0"
               aria-label="Back to Projects"
             />
-            <Image
-              src={assets.right_arrow_bold}
-              alt=""
-              className="w-4 h-4 rotate-180"
-            />
+            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
             <span className="Ovo">Back to Projects</span>
           </motion.div>
         </motion.div>
@@ -68,8 +65,8 @@ export default function ProjectDetailsPage() {
               className="bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-8 sm:p-10 text-center"
             >
               <div className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200 mb-5">
-                <span className="text-xl">🔎</span>
-                <span className="text-sm font-medium text-gray-700 Ovo">
+                <Search className="w-5 h-5 text-blue-700" aria-hidden="true" />
+                <span className="text-base font-medium text-gray-700 Ovo">
                   Not Found
                 </span>
               </div>
@@ -109,8 +106,8 @@ export default function ProjectDetailsPage() {
                   transition={{ duration: 0.6, delay: 0.25 }}
                   className="inline-flex w-fit items-center gap-2 px-5 py-2 bg-white/90 backdrop-blur-sm rounded-full border border-gray-200 shadow-sm mb-5"
                 >
-                  <span className="text-xl">💼</span>
-                  <span className="text-sm font-medium text-gray-700 Ovo">
+                  <Briefcase className="w-5 h-5 text-blue-700" aria-hidden="true" />
+                  <span className="text-base font-medium text-gray-700 Ovo">
                     Project Details
                   </span>
                 </motion.div>
@@ -159,18 +156,14 @@ export default function ProjectDetailsPage() {
                   <motion.div
                     whileHover={{ scale: 1.03, y: -2 }}
                     whileTap={{ scale: 0.98 }}
-                    className="relative px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-sm inline-flex items-center justify-center gap-2"
+                      className="relative px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-base inline-flex items-center justify-center gap-2"
                   >
                     <Link
                       href="/projects"
                       className="absolute inset-0"
                       aria-label="Browse more projects"
                     />
-                    <Image
-                      src={assets.right_arrow_bold}
-                      alt=""
-                      className="w-4 h-4 rotate-180"
-                    />
+                    <ArrowLeft className="w-4 h-4" aria-hidden="true" />
                     <span>Browse more</span>
                   </motion.div>
                 </div>
@@ -186,7 +179,7 @@ export default function ProjectDetailsPage() {
                 <h3 className="text-lg font-bold Ovo text-gray-900 mb-4">
                   Quick Info
                 </h3>
-                <div className="space-y-3 text-sm text-gray-700">
+                <div className="space-y-3 text-base text-gray-700">
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-gray-500 Ovo">Slug</span>
                     <span className="font-medium Ovo">{String(slug)}</span>
@@ -202,7 +195,7 @@ export default function ProjectDetailsPage() {
                 </div>
 
                 <div className="mt-6 rounded-xl border border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 p-4">
-                  <p className="text-gray-700 Ovo text-sm leading-relaxed">
+                  <p className="text-gray-700 Ovo text-base leading-relaxed">
                     Want real project content here? Add fields to workData (like
                     stack, links, highlights) and I’ll wire it into this page.
                   </p>
@@ -233,7 +226,7 @@ export default function ProjectDetailsPage() {
                       <h2 className="text-xl sm:text-2xl font-bold Ovo text-gray-900">
                         Media
                       </h2>
-                      <span className="text-sm text-gray-500 Ovo">
+                      <span className="text-base text-gray-500 Ovo">
                         {total} items
                       </span>
                     </div>
@@ -243,7 +236,7 @@ export default function ProjectDetailsPage() {
                         <p className="text-gray-700 Ovo font-medium">
                           No media uploaded yet
                         </p>
-                        <p className="text-gray-500 Ovo text-sm mt-1">
+                        <p className="text-gray-500 Ovo text-base mt-1">
                           Images and videos will appear here when added by
                           admin.
                         </p>
@@ -269,7 +262,7 @@ export default function ProjectDetailsPage() {
                                   poster={item.poster}
                                 />
                                 {item.caption && (
-                                  <div className="p-3 text-sm text-gray-600 Ovo">
+                                  <div className="p-3 text-base text-gray-600 Ovo">
                                     {item.caption}
                                   </div>
                                 )}
@@ -294,7 +287,7 @@ export default function ProjectDetailsPage() {
                                 />
                               </div>
                               {item.caption && (
-                                <div className="p-3 text-sm text-gray-600 Ovo">
+                                <div className="p-3 text-base text-gray-600 Ovo">
                                   {item.caption}
                                 </div>
                               )}
@@ -309,7 +302,7 @@ export default function ProjectDetailsPage() {
                         <button
                           type="button"
                           onClick={() => setShowAllMedia((v) => !v)}
-                          className="px-6 py-2.5 rounded-full border-2 border-gray-300 bg-white text-gray-700 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-sm"
+                          className="px-6 py-2.5 rounded-full border-2 border-gray-300 bg-white text-gray-700 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-base"
                         >
                           {showAllMedia
                             ? "Show less"

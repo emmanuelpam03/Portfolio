@@ -2,9 +2,9 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import Image from "next/image";
 import Link from "next/link";
-import { assets, workData } from "@/assets/assets";
+import { workData } from "@/assets/assets";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Puzzle } from "lucide-react";
 
 const slugify = (value) =>
   value
@@ -32,8 +32,8 @@ const ProjectsPage = () => {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200 mb-5"
           >
-            <span className="text-xl">🧩</span>
-            <span className="text-sm font-medium text-gray-700 Ovo">
+            <Puzzle className="w-5 h-5 text-blue-700" aria-hidden="true" />
+            <span className="text-base font-medium text-gray-700 Ovo">
               Projects
             </span>
           </motion.div>
@@ -70,7 +70,7 @@ const ProjectsPage = () => {
             <motion.div
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
-              className="relative px-7 py-3.5 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center gap-2 font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-sm"
+              className="relative px-7 py-3.5 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center gap-2 font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-base"
             >
               <Link
                 href="/#contact"
@@ -78,35 +78,19 @@ const ProjectsPage = () => {
                 aria-label="Let's Talk"
               />
               <span>Let&apos;s Talk</span>
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
+              <ArrowRight className="w-5 h-5" aria-hidden="true" />
             </motion.div>
             <motion.div
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
-              className="relative px-7 py-3.5 rounded-full border-2 border-gray-300 bg-white text-gray-700 flex items-center gap-2 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-sm"
+              className="relative px-7 py-3.5 rounded-full border-2 border-gray-300 bg-white text-gray-700 flex items-center gap-2 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-base"
             >
               <Link
                 href="/"
                 className="absolute inset-0"
                 aria-label="Back Home"
               />
-              <Image
-                src={assets.right_arrow_bold}
-                alt=""
-                className="w-4 h-4 rotate-180"
-              />
+              <ArrowLeft className="w-4 h-4" aria-hidden="true" />
               <span>Back Home</span>
             </motion.div>
           </motion.div>
@@ -155,16 +139,15 @@ const ProjectsPage = () => {
                       <h2 className="font-bold text-lg text-gray-800 mb-1 group-hover:text-blue-600 transition-colors duration-300">
                         {project.title}
                       </h2>
-                      <p className="text-sm text-gray-600 leading-relaxed">
+                      <p className="text-base text-gray-600 leading-relaxed">
                         {project.description}
                       </p>
                     </div>
 
                     <div className="flex-shrink-0 w-11 h-11 rounded-full border-2 border-gray-800 flex items-center justify-center shadow-[3px_3px_0_#000] group-hover:shadow-[5px_5px_0_#000] group-hover:bg-gradient-to-br group-hover:from-blue-400 group-hover:to-purple-400 group-hover:border-transparent transition-all duration-300">
-                      <Image
-                        src={assets.send_icon}
-                        alt=""
-                        className="w-5 h-5 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300"
+                      <ArrowUpRight
+                        className="w-5 h-5 text-gray-900 group-hover:text-white transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300"
+                        aria-hidden="true"
                       />
                     </div>
                   </div>

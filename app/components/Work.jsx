@@ -1,8 +1,8 @@
-import { assets, workData } from "@/assets/assets";
-import Image from "next/image";
+import { workData } from "@/assets/assets";
 import Link from "next/link";
 import React from "react";
 import { motion } from "motion/react";
+import { ArrowRight, ArrowUpRight, Briefcase } from "lucide-react";
 
 const slugify = (value) =>
   value
@@ -33,8 +33,8 @@ const Work = () => {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200 mb-4"
         >
-          <span className="text-xl">💼</span>
-          <span className="text-sm font-medium text-gray-700 Ovo">
+          <Briefcase className="w-5 h-5 text-blue-700" aria-hidden="true" />
+          <span className="text-base font-medium text-gray-700 Ovo">
             My Portfolio
           </span>
         </motion.div>
@@ -100,7 +100,7 @@ const Work = () => {
                       <h2 className="font-bold text-lg text-gray-800 mb-1 group-hover:text-blue-600 transition-colors duration-300">
                         {project.title}
                       </h2>
-                      <p className="text-sm text-gray-600 leading-relaxed">
+                      <p className="text-base text-gray-600 leading-relaxed">
                         {project.description}
                       </p>
                     </Link>
@@ -112,10 +112,9 @@ const Work = () => {
                     aria-label={`View ${project.title}`}
                     className="flex-shrink-0 w-11 h-11 rounded-full border-2 border-gray-800 flex items-center justify-center shadow-[3px_3px_0_#000] group-hover:shadow-[5px_5px_0_#000] group-hover:bg-gradient-to-br group-hover:from-blue-400 group-hover:to-purple-400 group-hover:border-transparent transition-all duration-300"
                   >
-                    <Image
-                      src={assets.send_icon}
-                      alt="View project"
-                      className="w-5 h-5 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300"
+                    <ArrowUpRight
+                      className="w-5 h-5 text-gray-900 group-hover:text-white transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300"
+                      aria-hidden="true"
                     />
                   </Link>
                 </div>
@@ -153,10 +152,9 @@ const Work = () => {
           {/* Animated background on hover */}
           <span className="relative z-10 flex items-center gap-3">
             Show More Projects
-            <Image
-              src={assets.right_arrow_bold}
-              alt="Right arrow"
+            <ArrowRight
               className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300"
+              aria-hidden="true"
             />
           </span>
         </motion.div>

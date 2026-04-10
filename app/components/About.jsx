@@ -2,6 +2,7 @@ import { assets, infoList, toolsData } from "@/assets/assets";
 import Image from "next/image";
 import React from "react";
 import { motion } from "motion/react";
+import { Wrench } from "lucide-react";
 
 const About = () => {
   return (
@@ -25,7 +26,7 @@ const About = () => {
           className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200 mb-4"
         >
           <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-          <span className="text-sm font-medium text-gray-700 Ovo">
+          <span className="text-base font-medium text-gray-700 Ovo">
             Introduction
           </span>
         </motion.div>
@@ -98,7 +99,7 @@ const About = () => {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
           >
-            {infoList.map(({ icon, iconDark, title, description }, index) => (
+            {infoList.map(({ icon: Icon, title, description }, index) => (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -112,12 +113,12 @@ const About = () => {
 
                 <div className="relative z-10">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
-                    <Image src={icon} alt={title} className="w-6 h-6" />
+                    <Icon className="w-6 h-6 text-gray-700" aria-hidden="true" />
                   </div>
                   <h3 className="font-semibold text-gray-800 mb-2 text-base">
                     {title}
                   </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
+                  <p className="text-gray-600 text-base leading-relaxed">
                     {description}
                   </p>
                 </div>
@@ -135,7 +136,7 @@ const About = () => {
             >
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
               <h4 className="text-gray-700 font-semibold Ovo flex items-center gap-2">
-                <span className="text-xl">🛠️</span>
+                <Wrench className="w-5 h-5 text-gray-700" aria-hidden="true" />
                 Tools I Use
               </h4>
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>

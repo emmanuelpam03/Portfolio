@@ -2,13 +2,15 @@ export const metadata = {
   title: "New Project | Admin",
 };
 
+import { Plus } from "lucide-react";
+
 export default function AdminNewProjectPage() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-2xl p-7 sm:p-10">
         <div className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200 mb-5">
-          <span className="text-xl">➕</span>
-          <span className="text-sm font-medium text-gray-700 Ovo">
+          <Plus className="w-4 h-4 text-blue-700" aria-hidden="true" />
+          <span className="text-base font-medium text-gray-800 Ovo">
             Projects
           </span>
         </div>
@@ -48,7 +50,7 @@ export default function AdminNewProjectPage() {
           <div className="flex justify-end">
             <button
               type="button"
-              className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-sm"
+              className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-base"
             >
               Save (coming soon)
             </button>
