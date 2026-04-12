@@ -3,5 +3,23 @@
   "typescript.preferences.importModuleSpecifier": "non-relative",
 
   "javascript.preferences.importModuleSpecifierEnding": "minimal",
-  "typescript.preferences.importModuleSpecifierEnding": "minimal"
+  "typescript.preferences.importModuleSpecifierEnding": "minimal",
+  "sqltools.connections": [
+    {
+      "pgOptions": {
+        "ssl": {
+          "rejectUnauthorized": true
+        }
+      },
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "ep-tiny-resonance-an62uo50-pooler.c-6.us-east-1.aws.neon.tech",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "Portfolio DB",
+      "group": "Portfolio",
+      "database": "neondb",
+      "username": "neondb_owner"
+    }
+  ]
 }
