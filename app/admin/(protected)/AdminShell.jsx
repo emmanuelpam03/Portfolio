@@ -19,17 +19,15 @@ export default function AdminShell({ children }) {
       <div className="relative w-full px-[6%] sm:px-[8%] pt-10 pb-16">
         <div className="max-w-7xl mx-auto">
           {isSidebarOpen && (
-            <aside className="hidden lg:block fixed top-24 left-1/2 -translate-x-1/2 w-full max-w-7xl pointer-events-none">
-              <div className="admin-scroll pointer-events-auto w-[280px] max-h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-6">
+            <aside className="hidden lg:block fixed top-10 left-1/2 -translate-x-1/2 w-full max-w-7xl pointer-events-none">
+              <div className="admin-scroll pointer-events-auto w-[280px] max-h-[calc(100vh-2.5rem)] overflow-y-auto pr-2 pb-6">
                 <AdminSidebar />
               </div>
             </aside>
           )}
 
-          <main
-            className={`min-w-0 ${isSidebarOpen ? "lg:pl-[320px]" : ""}`}
-          >
-            <div className="hidden lg:flex sticky top-6 z-50 mb-6 bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-4 items-center justify-between gap-3">
+          <main className={`min-w-0 ${isSidebarOpen ? "lg:pl-[320px]" : ""}`}>
+            <div className="hidden lg:flex sticky top-10 z-50 mb-6 bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-4 items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <button
                   type="button"
