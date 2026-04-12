@@ -97,7 +97,18 @@ export async function getProjectById(id) {
 
 // Create a new project
 export async function createProject(data) {
+  // admin check
   await requireAdmin();
+
+  const parsed = projectSchema.safeParse(data);
+
+  if (!parsed.success) {
+    const flattened = parsed.error.flatten();
+    throw new Error(
+      "Validation failed: " + JSON.stringify(flattened.fieldErrors),
+    );
+  }
+
   const {
     title,
     description,
@@ -149,7 +160,18 @@ export async function createProject(data) {
 
 // Update an existing project
 export async function updateProject(id, data) {
+  // require admin
   await requireAdmin();
+
+  const parsed = projectSchema.partial().safeParse(data);
+
+  if (!parsed.success) {
+    const flattened = parsed.error.flatten();
+    throw new Error(
+      "Validation failed: " + JSON.stringify(flattened.fieldErrors),
+    );
+  }
+
   const {
     title,
     description,
