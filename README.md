@@ -22,7 +22,7 @@ You can start editing the page by modifying `app/page.js`. The page auto-updates
 
 This repo ignores `.vscode/settings.json` because it can contain local database connection details.
 
-- Copy `.vscode/settings.example.json` to `.vscode/settings.json`
+- Create `.vscode/settings.json` locally (it is gitignored)
 - Fill in the `${env:...}` placeholders via environment variables (recommended), a secure secret store, or replace them locally
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

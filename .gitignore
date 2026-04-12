@@ -42,3 +42,4 @@ next-env.d.ts
 
 # vscode (workspace-local; may include DB connection metadata)
 .vscode/settings.json
+.vscode/settings.example.json
