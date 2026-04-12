@@ -89,7 +89,6 @@ export async function getProjectById(id) {
 
   return projects[0];
 }
-return projects;
 
 // Create a new project
 export async function createProject(data) {
@@ -158,6 +157,29 @@ export async function updateProject(id, data) {
     throw new Error("Missing required fields");
   }
 
+  let nextIsPublished = is_published;
+  let nextIsFeatured = is_featured;
+
+  if (nextIsPublished === undefined || nextIsFeatured === undefined) {
+    const existing = await sql`
+      SELECT is_published, is_featured
+      FROM projects
+      WHERE id = ${id}
+    `;
+
+    if (existing.length === 0) {
+      throw new Error("Project not found");
+    }
+
+    if (nextIsPublished === undefined) {
+      nextIsPublished = existing[0].is_published;
+    }
+
+    if (nextIsFeatured === undefined) {
+      nextIsFeatured = existing[0].is_featured;
+    }
+  }
+
   const project = await sql`
       UPDATE projects
       SET title = ${title}, 
@@ -165,8 +187,8 @@ export async function updateProject(id, data) {
       image_url = ${image_url}, 
       project_live_url = ${project_live_url ?? null}, 
       project_github_url = ${project_github_url}, 
-      is_published = ${is_published ?? false}, 
-      is_featured = ${is_featured ?? false}
+      is_published = ${nextIsPublished}, 
+      is_featured = ${nextIsFeatured}
     WHERE id = ${id}
     RETURNING id
   `;
@@ -179,9 +201,15 @@ export async function updateProject(id, data) {
 }
 // Delete a project
 export async function deleteProject(id) {
-  await sql`
-    DELETE FROM projects
-    WHERE id = ${id}
-  `;
+  const project = await sql`
+  DELETE FROM projects
+  WHERE id = ${id}
+  RETURNING id
+`;
+
+  if (project.length === 0) {
+    throw new Error("Project not found");
+  }
+
   return true;
 }
