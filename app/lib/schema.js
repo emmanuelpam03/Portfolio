@@ -22,7 +22,11 @@ export const projectMediaSchema = z.object({
 
 export const projectSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(255),
-  description: z.string().trim().min(1, "Description is required"),
+  description: z
+    .string()
+    .trim()
+    .min(1, "Description is required")
+    .max(5000, "Description must not exceed 5000 characters"),
   hero_image_url: z.string().url("Enter a valid hero image URL"),
   project_live_url: z
     .string()

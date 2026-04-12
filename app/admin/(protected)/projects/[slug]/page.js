@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Pencil } from "lucide-react";
+import { notFound } from "next/navigation";
 
 import {
   getProjectBySlugAdmin,
@@ -14,7 +15,13 @@ export const metadata = {
 
 export default async function AdminEditProjectPage({ params }) {
   const slug = (await params)?.slug;
+  if (!slug) notFound();
+
   const project = await getProjectBySlugAdmin(slug);
+
+  if (!project) {
+    notFound();
+  }
 
   return (
     <div className="max-w-6xl mx-auto">

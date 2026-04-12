@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { unstable_rethrow } from "next/navigation";
 import { Folder } from "lucide-react";
 
 import {
@@ -11,8 +12,16 @@ export const metadata = {
 };
 
 export default async function AdminProjectsPage() {
-  const projects = await getAllProjectsAdmin();
+  let projects = [];
+  try {
+    projects = (await getAllProjectsAdmin()) ?? [];
+  } catch (error) {
+    // Don't swallow Next.js navigation signals (redirect/notFound/etc.).
+    unstable_rethrow(error);
 
+    console.error("Failed to load admin projects", error);
+    projects = [];
+  }
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-2xl p-7 sm:p-10">
