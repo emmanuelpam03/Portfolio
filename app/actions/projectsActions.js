@@ -1,6 +1,7 @@
 "use server";
 
 import { sql } from "@/app/lib/db";
+import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 
 // generate slug
@@ -134,6 +135,10 @@ export async function createProject(data) {
     RETURNING id
   `;
   return project[0].id;
+
+  revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath("/projects/${slug}");
 }
 
 // Update an existing project
@@ -212,4 +217,8 @@ export async function deleteProject(id) {
   }
 
   return true;
+
+  revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath("/projects/${project[0].slug}");
 }
