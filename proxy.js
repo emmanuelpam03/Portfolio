@@ -41,10 +41,12 @@ export async function proxy(request) {
   const sessionHash = await sha256Base64Url(sessionToken);
 
   const rows = await sql`
-    SELECT id
-    FROM admin_sessions
-    WHERE session_hash = ${sessionHash}
-      AND expires_at > NOW()
+    SELECT s.id
+    FROM admin_sessions s
+    JOIN admin_allowlist a ON a.email = s.email
+    WHERE s.session_hash = ${sessionHash}
+      AND s.expires_at > NOW()
+      AND a.is_active = true
     LIMIT 1;
   `;
 

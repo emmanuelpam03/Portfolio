@@ -1,8 +1,10 @@
 "use server";
 
 import { sql } from "@/app/lib/db";
+import { requireAdmin } from "@/app/lib/adminSession";
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
+const session = await getAdminSession();
 
 // generate slug
 function slugify(title) {
@@ -34,6 +36,7 @@ async function generateUniqueSlug(baseSlug) {
 }
 // Get all projects for admin (including unpublished)
 export async function getAllProjectsAdmin() {
+  await requireAdmin();
   const projects = await sql`
     SELECT id, slug, title, description, image_url, is_published, is_featured, created_at, updated_at
     FROM projects
@@ -80,6 +83,7 @@ export async function getProjectBySlug(slug) {
 
 // Get Project by ID (for admin editing) - includes unpublished projects
 export async function getProjectById(id) {
+  await requireAdmin();
   const projects = await sql`
   SELECT id, slug, title, description, image_url, created_at, updated_at
   FROM projects
@@ -93,6 +97,7 @@ export async function getProjectById(id) {
 
 // Create a new project
 export async function createProject(data) {
+  await requireAdmin();
   const {
     title,
     description,
@@ -134,15 +139,17 @@ export async function createProject(data) {
     )
     RETURNING id
   `;
-  return project[0].id;
 
   revalidatePath("/");
   revalidatePath("/projects");
   revalidatePath("/projects/${slug}");
+
+  return project[0].id;
 }
 
 // Update an existing project
 export async function updateProject(id, data) {
+  await requireAdmin();
   const {
     title,
     description,
@@ -206,6 +213,7 @@ export async function updateProject(id, data) {
 }
 // Delete a project
 export async function deleteProject(id) {
+  await requireAdmin();
   const project = await sql`
   DELETE FROM projects
   WHERE id = ${id}
@@ -216,9 +224,9 @@ export async function deleteProject(id) {
     throw new Error("Project not found");
   }
 
-  return true;
-
   revalidatePath("/");
   revalidatePath("/projects");
   revalidatePath("/projects/${project[0].slug}");
+
+  return true;
 }
