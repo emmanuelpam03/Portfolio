@@ -13,8 +13,6 @@ import {
   Wrench,
 } from "lucide-react";
 
-import AdminLogoutButton from "@/app/admin/AdminLogoutButton";
-
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: Home },
   { label: "Projects", href: "/admin/projects", icon: Folder },
@@ -43,9 +41,6 @@ export default function AdminSidebar() {
               Admin
             </span>
           </div>
-          <p className="text-base text-gray-700 Ovo">
-            Manage all site content (except contact messages).
-          </p>
         </div>
 
         <Link
@@ -104,19 +99,6 @@ export default function AdminSidebar() {
           );
         })}
       </nav>
-
-      <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-4">
-        <p className="text-sm text-gray-700 Ovo">
-          Note: contact messages are not stored here.
-        </p>
-        <p className="text-sm text-gray-600 Ovo mt-1">
-          You’ll receive them directly via email.
-        </p>
-      </div>
-
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <AdminLogoutButton fullWidth />
-      </div>
     </div>
   );
 }

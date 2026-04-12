@@ -38,27 +38,28 @@
   background-size: 90% auto;
 }
 
-/* Subtle scrollbar (admin sidebar) */
-.admin-scroll {
-  scrollbar-width: auto;
+/* Subtle scrollbar (site-wide) */
+* {
+  scrollbar-width: thin;
   scrollbar-color: rgba(107, 114, 128, 0.35) transparent;
 }
 
-.admin-scroll::-webkit-scrollbar {
+*::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
-.admin-scroll::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.admin-scroll::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
   background-color: rgba(107, 114, 128, 0.25);
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
-.admin-scroll:hover::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb:hover {
   background-color: rgba(107, 114, 128, 0.4);
 }
