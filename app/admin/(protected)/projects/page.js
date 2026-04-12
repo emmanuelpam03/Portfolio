@@ -1,11 +1,18 @@
 import Link from "next/link";
 import { Folder } from "lucide-react";
 
+import {
+  deleteProjectAction,
+  getAllProjectsAdmin,
+} from "@/app/actions/projectsActions";
+
 export const metadata = {
   title: "Admin Projects | Portfolio",
 };
 
-export default function AdminProjectsPage() {
+export default async function AdminProjectsPage() {
+  const projects = await getAllProjectsAdmin();
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-2xl p-7 sm:p-10">
@@ -35,10 +42,7 @@ export default function AdminProjectsPage() {
         </div>
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5">
-          {[
-            { title: "Sample project", slug: "sample-project" },
-            { title: "Another project", slug: "another-project" },
-          ].map((p) => (
+          {projects.map((p) => (
             <div
               key={p.slug}
               className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-lg p-6"
@@ -54,12 +58,15 @@ export default function AdminProjectsPage() {
                 >
                   Edit
                 </Link>
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-red-600 text-base font-medium"
-                >
-                  Remove
-                </button>
+                <form action={deleteProjectAction}>
+                  <input type="hidden" name="id" value={p.id} />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-red-600 text-base font-medium"
+                  >
+                    Remove
+                  </button>
+                </form>
               </div>
             </div>
           ))}

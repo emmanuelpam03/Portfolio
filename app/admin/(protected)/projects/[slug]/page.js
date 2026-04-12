@@ -1,12 +1,20 @@
 import Link from "next/link";
 import { Pencil } from "lucide-react";
 
+import {
+  getProjectBySlugAdmin,
+  updateProjectAction,
+} from "@/app/actions/projectsActions";
+
+import AdminProjectForm from "../AdminProjectForm";
+
 export const metadata = {
   title: "Edit Project | Admin",
 };
 
 export default async function AdminEditProjectPage({ params }) {
   const slug = (await params)?.slug;
+  const project = await getProjectBySlugAdmin(slug);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -23,7 +31,7 @@ export default async function AdminEditProjectPage({ params }) {
             <h2 className="text-2xl sm:text-3xl font-bold Ovo bg-gradient-to-r from-gray-900 via-blue-800 to-purple-700 bg-clip-text text-transparent mb-2">
               Edit project
             </h2>
-            <p className="text-gray-600 Ovo">Slug: {slug}</p>
+            <p className="text-gray-600 Ovo">Slug: {project.slug}</p>
           </div>
 
           <Link
@@ -34,39 +42,13 @@ export default async function AdminEditProjectPage({ params }) {
           </Link>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
-              Title
-            </label>
-            <input
-              type="text"
-              name="title"
-              defaultValue={"Sample project"}
-              className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
-              Description
-            </label>
-            <textarea
-              name="description"
-              rows={5}
-              defaultValue={"Design-only editor"}
-              className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
-            />
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="button"
-              className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-base"
-            >
-              Save (coming soon)
-            </button>
-          </div>
+        <div className="mt-8">
+          <AdminProjectForm
+            action={updateProjectAction}
+            submitLabel="Save changes"
+            initialProject={project}
+            initialMedia={project.media}
+          />
         </div>
       </div>
     </div>

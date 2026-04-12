@@ -12,12 +12,34 @@ export const contactSchema = z.object({
 
 // Project Schema for Admin CRUD operations
 
-const projectSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().min(1),
-  image_url: z.string().url(),
-  project_live_url: z.string().url().optional().nullable(),
-  project_github_url: z.string().url(),
+export const projectMediaSchema = z.object({
+  type: z.enum(["image", "video"]),
+  url: z.string().url("Enter a valid media URL"),
+  poster_url: z.string().url("Enter a valid poster URL").optional().nullable(),
+  alt: z.string().trim().max(200).optional().nullable(),
+  caption: z.string().trim().max(500).optional().nullable(),
+});
+
+export const projectSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(255),
+  description: z.string().trim().min(1, "Description is required"),
+  hero_image_url: z.string().url("Enter a valid hero image URL"),
+  project_live_url: z
+    .string()
+    .url("Enter a valid live URL")
+    .optional()
+    .nullable(),
+  project_github_url: z
+    .string()
+    .url("Enter a valid GitHub URL")
+    .refine(
+      (value) => value.startsWith("https://github.com/"),
+      "GitHub URL must start with https://github.com/",
+    ),
   is_published: z.boolean().optional(),
   is_featured: z.boolean().optional(),
+});
+
+export const projectWithMediaSchema = projectSchema.extend({
+  media: z.array(projectMediaSchema).default([]),
 });
