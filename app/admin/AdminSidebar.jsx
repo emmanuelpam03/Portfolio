@@ -32,7 +32,7 @@ export default function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-2xl p-5">
+    <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-lg p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200 mb-4">
