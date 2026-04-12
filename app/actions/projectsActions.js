@@ -14,24 +14,27 @@ function slugify(title) {
 
 // Ensure slug is unique by checking against the database. If it exists, append a short random string.
 async function generateUniqueSlug(baseSlug) {
-  const existing = await sql`
-    SELECT id FROM projects WHERE slug = ${baseSlug}
-  `;
+  let slug = baseSlug;
+  let attempts = 0;
+  const maxAttempts = 5;
 
-  if (existing.length === 0) {
-    return baseSlug;
+  while (attempts < maxAttempts) {
+    const existing = await sql`
+      SELECT id FROM projects WHERE slug = ${slug}
+    `;
+    if (existing.length === 0) {
+      return slug;
+    }
+    slug = `${baseSlug}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    attempts++;
   }
 
-  // fallback: add short timestamp
-  const uniqueSlug = `${baseSlug}-${Date.now().toString().slice(-5)}`;
-
-  return uniqueSlug;
+  throw new Error("Unable to generate unique slug");
 }
-
 // Get all projects for admin (including unpublished)
 export async function getAllProjectsAdmin() {
   const projects = await sql`
-    SELECT id, slug, title, description, image_url, created_at, updated_at
+    SELECT id, slug, title, description, image_url, is_published, is_featured, created_at, updated_at
     FROM projects
     ORDER BY created_at DESC
   `;
@@ -62,7 +65,7 @@ export async function getFeaturedProjects(limit = 10) {
 }
 
 // Get Project by Slug
-export async function getProductBySlug(slug) {
+export async function getProjectBySlug(slug) {
   const projects = await sql`
     SELECT id, slug, title, description, image_url, created_at, updated_at
     FROM projects
@@ -74,18 +77,19 @@ export async function getProductBySlug(slug) {
   return projects;
 }
 
-// Get Project by ID
+// Get Project by ID (for admin editing) - includes unpublished projects
 export async function getProjectById(id) {
   const projects = await sql`
-    SELECT id, slug, title, description, image_url, created_at, updated_at
-    FROM projects
-    WHERE id = ${id} AND is_published = true
-  `;
+  SELECT id, slug, title, description, image_url, created_at, updated_at
+  FROM projects
+  WHERE id = ${id}
+`;
 
   if (projects.length === 0) return notFound();
 
-  return projects;
+  return projects[0];
 }
+return projects;
 
 // Create a new project
 export async function createProject(data) {
@@ -99,13 +103,13 @@ export async function createProject(data) {
     is_featured,
   } = data;
 
-  const baseSlug = slugify(title);
-  const slug = await generateUniqueSlug(baseSlug);
-
   // Basic validation
   if (!title || !description || !image_url || !project_github_url) {
     throw new Error("Missing required fields");
   }
+
+  const baseSlug = slugify(title);
+  const slug = await generateUniqueSlug(baseSlug);
 
   const project = await sql`
     INSERT INTO projects (
@@ -126,7 +130,7 @@ export async function createProject(data) {
       ${project_live_url ?? null}, 
       ${project_github_url}, 
       ${is_published ?? false}, 
-      ${is_featured}
+      ${is_featured ?? false}
     )
     RETURNING id
   `;
@@ -161,14 +165,18 @@ export async function updateProject(id, data) {
       image_url = ${image_url}, 
       project_live_url = ${project_live_url ?? null}, 
       project_github_url = ${project_github_url}, 
-      is_published = ${is_published}, 
-      is_featured = ${is_featured}
+      is_published = ${is_published ?? false}, 
+      is_featured = ${is_featured ?? false}
     WHERE id = ${id}
     RETURNING id
   `;
+
+  if (project.length === 0) {
+    throw new Error("Project not found");
+  }
+
   return project[0].id;
 }
-
 // Delete a project
 export async function deleteProject(id) {
   await sql`
