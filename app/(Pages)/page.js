@@ -6,6 +6,8 @@ import Work from "@/app/components/Work";
 
 import { getAboutPublic } from "@/app/actions/aboutActions";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const aboutResult = await getAboutPublic();
   const about = aboutResult?.about ?? null;

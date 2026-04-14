@@ -60,10 +60,10 @@ const Header = ({ heroImage = null }) => {
             </h3>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl Ovo font-bold leading-tight">
               <span className="bg-gradient-to-r from-gray-900 via-blue-800 to-purple-700 bg-clip-text text-transparent">
-                Front-End
+                Full-Stack
               </span>
               <br />
-              <span className="text-gray-800">Web Developer</span>
+              <span className="text-gray-800">Developer</span>
             </h1>
           </motion.div>
 
@@ -85,8 +85,7 @@ const Header = ({ heroImage = null }) => {
             transition={{ duration: 0.8, delay: 0.8 }}
             className="text-gray-600 text-base sm:text-lg leading-relaxed max-w-xl"
           >
-            I build clean, user-friendly interfaces using modern frameworks like
-            React and Next.js.
+            I design, build, and ship full-stack products: responsive UI, secure backends, and scalable data — with React/Next.js.
           </motion.p>
 
           {/* CTA Buttons */}

@@ -16,12 +16,16 @@ const About = ({ about = null }) => {
       : fallbackAboutText;
 
   const aboutImageSrc =
-    about && typeof about?.about_image?.url === "string" && about.about_image.url
+    about &&
+    typeof about?.about_image?.url === "string" &&
+    about.about_image.url
       ? about.about_image.url
       : assets.user_image;
 
   const aboutImageAlt =
-    about && typeof about?.about_image?.alt === "string" && about.about_image.alt
+    about &&
+    typeof about?.about_image?.alt === "string" &&
+    about.about_image.alt
       ? about.about_image.alt
       : "user";
 
@@ -32,7 +36,9 @@ const About = ({ about = null }) => {
   };
 
   const sortedDbCards = Array.isArray(about?.cards)
-    ? [...about.cards].sort((a, b) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0))
+    ? [...about.cards].sort(
+        (a, b) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0),
+      )
     : [];
 
   const cardsForUi = (Array.isArray(infoList) ? infoList.slice(0, 3) : []).map(
@@ -40,7 +46,9 @@ const About = ({ about = null }) => {
       const dbCard = sortedDbCards[index];
       const iconKey = dbCard?.icon_key ?? null;
       const Icon =
-        iconKey && iconKeyToIcon[iconKey] ? iconKeyToIcon[iconKey] : fallback.icon;
+        iconKey && iconKeyToIcon[iconKey]
+          ? iconKeyToIcon[iconKey]
+          : fallback.icon;
 
       return {
         Icon,
@@ -49,7 +57,9 @@ const About = ({ about = null }) => {
             ? dbCard.title
             : fallback.title,
         description:
-          dbCard && typeof dbCard?.description === "string" && dbCard.description.trim()
+          dbCard &&
+          typeof dbCard?.description === "string" &&
+          dbCard.description.trim()
             ? dbCard.description
             : fallback.description,
       };
@@ -57,8 +67,12 @@ const About = ({ about = null }) => {
   );
 
   const sortedDbTools = Array.isArray(about?.tools)
-    ? [...about.tools].sort((a, b) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0))
+    ? [...about.tools].sort(
+        (a, b) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0),
+      )
     : [];
+
+  const hasDbAbout = Boolean(about);
 
   const toolsForUi = sortedDbTools.length
     ? sortedDbTools
@@ -71,11 +85,13 @@ const About = ({ about = null }) => {
               : `Tool ${index + 1}`,
         }))
         .filter((tool) => typeof tool.src === "string" && tool.src)
-    : toolsData.map((tool, index) => ({
-        key: `fallback-tool-${index}`,
-        src: tool,
-        alt: "Tool",
-      }));
+    : hasDbAbout
+      ? []
+      : toolsData.map((tool, index) => ({
+          key: `fallback-tool-${index}`,
+          src: tool,
+          alt: "Tool",
+        }));
 
   return (
     <motion.div
@@ -184,7 +200,10 @@ const About = ({ about = null }) => {
                 <div className="relative z-10">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
                     {Icon ? (
-                      <Icon className="w-6 h-6 text-gray-700" aria-hidden="true" />
+                      <Icon
+                        className="w-6 h-6 text-gray-700"
+                        aria-hidden="true"
+                      />
                     ) : null}
                   </div>
                   <h3 className="font-semibold text-gray-800 mb-2 text-base">
