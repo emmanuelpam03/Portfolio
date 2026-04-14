@@ -54,14 +54,86 @@ SET alt = LEFT(
 )
 WHERE alt IS NULL OR BTRIM(alt) = '';
 
--- Safety clamp for existing rows before adding length constraints.
-UPDATE media_assets
-SET url = LEFT(url, 2048)
-WHERE length(url) > 2048;
+-- Pre-check for existing rows before adding length constraints.
+-- Pre-check: do NOT silently truncate `media_assets.url` / `media_assets.poster_url`.
+-- Truncation can corrupt the stored URLs and can create collisions (including against `media_assets_url_uidx`).
+-- Instead, quarantine oversized rows and abort so they can be manually remediated.
+CREATE TABLE IF NOT EXISTS media_assets_quarantine (
+  media_assets_id     UUID PRIMARY KEY,
+  reason              TEXT NOT NULL,
+  type                TEXT,
+  url                 TEXT,
+  poster_url          TEXT,
+  url_length          INT,
+  poster_url_length   INT,
+  alt                 TEXT,
+  caption             TEXT,
+  created_at          TIMESTAMPTZ,
+  logged_at           TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-UPDATE media_assets
-SET poster_url = LEFT(poster_url, 2048)
-WHERE poster_url IS NOT NULL AND length(poster_url) > 2048;
+INSERT INTO media_assets_quarantine (
+  media_assets_id,
+  reason,
+  type,
+  url,
+  poster_url,
+  url_length,
+  poster_url_length,
+  alt,
+  caption,
+  created_at
+)
+SELECT
+  id,
+  CASE
+    WHEN length(url) > 2048 AND poster_url IS NOT NULL AND length(poster_url) > 2048
+      THEN 'url_and_poster_url_too_long'
+    WHEN length(url) > 2048
+      THEN 'url_too_long'
+    ELSE
+      'poster_url_too_long'
+  END AS reason,
+  type,
+  url,
+  poster_url,
+  length(url) AS url_length,
+  CASE WHEN poster_url IS NULL THEN NULL ELSE length(poster_url) END AS poster_url_length,
+  alt,
+  caption,
+  created_at
+FROM media_assets
+WHERE length(url) > 2048
+   OR (poster_url IS NOT NULL AND length(poster_url) > 2048)
+ON CONFLICT (media_assets_id) DO UPDATE SET
+  reason = EXCLUDED.reason,
+  type = EXCLUDED.type,
+  url = EXCLUDED.url,
+  poster_url = EXCLUDED.poster_url,
+  url_length = EXCLUDED.url_length,
+  poster_url_length = EXCLUDED.poster_url_length,
+  alt = EXCLUDED.alt,
+  caption = EXCLUDED.caption,
+  created_at = EXCLUDED.created_at,
+  logged_at = now();
+
+DO $$
+DECLARE
+  oversized_count integer;
+BEGIN
+  SELECT count(*)
+  INTO oversized_count
+  FROM media_assets
+  WHERE length(url) > 2048
+     OR (poster_url IS NOT NULL AND length(poster_url) > 2048);
+
+  IF oversized_count > 0 THEN
+    RAISE EXCEPTION
+      'Migration blocked: % media_assets row(s) have an oversized url/poster_url (media_assets.url > 2048 OR media_assets.poster_url > 2048). Review media_assets_quarantine and remediate manually before rerunning media.sql.',
+      oversized_count;
+  END IF;
+END;
+$$;
 
 UPDATE media_assets
 SET alt = LEFT(alt, 300)

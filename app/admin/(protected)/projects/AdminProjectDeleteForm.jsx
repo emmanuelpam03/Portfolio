@@ -69,10 +69,11 @@ export default function AdminProjectDeleteForm({ id }) {
                     className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-red-600 text-sm font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={() => {
                       if (pending) return;
-                      setIsSubmitting(true);
 
                       const form = formRef.current;
                       if (!form) return;
+
+                      setIsSubmitting(true);
 
                       startTransition(() => {
                         if (typeof form.requestSubmit === "function") {

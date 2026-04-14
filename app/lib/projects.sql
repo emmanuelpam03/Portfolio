@@ -55,16 +55,36 @@ CREATE TABLE IF NOT EXISTS project_media (
 
 -- Migration helper: older versions allowed NULL/blank alt.
 -- Backfill before enforcing NOT NULL.
-UPDATE project_media
-SET alt = LEFT(
-  COALESCE(
-    NULLIF(BTRIM(caption), ''),
+-- This backfill uses caption-derived text first, then filename-derived text from `url`,
+-- then finally the generic CASE fallback (CASE WHEN type = 'video' THEN 'Video' ELSE 'Image' END).
+-- Rows that end up using the filename-derived logic or the generic fallback are recorded for manual review.
+BEGIN;
+
+LOCK TABLE project_media IN ACCESS EXCLUSIVE MODE;
+
+CREATE TABLE IF NOT EXISTS project_media_alt_backfill_audit (
+  project_media_id UUID PRIMARY KEY,
+  reason           TEXT NOT NULL,
+  derived_alt      TEXT NOT NULL,
+  type             TEXT NOT NULL,
+  url              TEXT NOT NULL,
+  caption          TEXT,
+  logged_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+WITH candidates AS (
+  SELECT
+    pm.id,
+    pm.type,
+    pm.url,
+    pm.caption,
+    NULLIF(BTRIM(pm.caption), '') AS caption_alt,
     NULLIF(
       INITCAP(
         REPLACE(
           REPLACE(
             REGEXP_REPLACE(
-              REGEXP_REPLACE(split_part(url, '?', 1), '^.*/', ''),
+              REGEXP_REPLACE(split_part(pm.url, '?', 1), '^.*/', ''),
               E'\\.[^.]*$',
               ''
             ),
@@ -76,12 +96,60 @@ SET alt = LEFT(
         )
       ),
       ''
-    ),
-    CASE WHEN type = 'video' THEN 'Video' ELSE 'Image' END
-  ),
-  200
+    ) AS filename_alt,
+    CASE WHEN pm.type = 'video' THEN 'Video' ELSE 'Image' END AS generic_alt
+  FROM project_media pm
+  WHERE pm.alt IS NULL OR BTRIM(pm.alt) = ''
+),
+backfill AS (
+  SELECT
+    id,
+    type,
+    url,
+    caption,
+    caption_alt,
+    filename_alt,
+    generic_alt,
+    LEFT(COALESCE(caption_alt, filename_alt, generic_alt), 200) AS new_alt,
+    (caption_alt IS NULL AND filename_alt IS NOT NULL) AS used_filename_derived,
+    (caption_alt IS NULL AND filename_alt IS NULL) AS used_generic_fallback
+  FROM candidates
+),
+updated AS (
+  UPDATE project_media pm
+  SET alt = b.new_alt
+  FROM backfill b
+  WHERE pm.id = b.id
+  RETURNING
+    pm.id AS project_media_id,
+    b.type,
+    b.url,
+    b.caption,
+    b.new_alt,
+    b.used_filename_derived,
+    b.used_generic_fallback
 )
-WHERE alt IS NULL OR BTRIM(alt) = '';
+INSERT INTO project_media_alt_backfill_audit (
+  project_media_id,
+  reason,
+  derived_alt,
+  type,
+  url,
+  caption
+)
+SELECT
+  project_media_id,
+  CASE
+    WHEN used_generic_fallback THEN 'generic_fallback_case'
+    WHEN used_filename_derived THEN 'filename_derived_from_url'
+  END AS reason,
+  new_alt AS derived_alt,
+  type,
+  url,
+  caption
+FROM updated
+WHERE used_generic_fallback OR used_filename_derived
+ON CONFLICT (project_media_id) DO NOTHING;
 
 -- Safety clamp for existing rows.
 UPDATE project_media
@@ -90,6 +158,8 @@ WHERE length(alt) > 200;
 
 ALTER TABLE project_media
   ALTER COLUMN alt SET NOT NULL;
+
+COMMIT;
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_projects_slug ON projects(slug);

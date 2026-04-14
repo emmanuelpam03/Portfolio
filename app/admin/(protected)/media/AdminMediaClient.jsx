@@ -208,6 +208,21 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
     };
   }, [viewerAsset]);
 
+  useEffect(() => {
+    if (!confirmDeleteAsset) return;
+
+    function onKeyDown(event) {
+      if (event.key === "Escape") {
+        setConfirmDeleteAsset(null);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [confirmDeleteAsset]);
+
   async function handleFile(file) {
     if (!file) return;
 

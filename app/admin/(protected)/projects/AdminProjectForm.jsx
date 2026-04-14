@@ -947,22 +947,23 @@ export default function AdminProjectForm({
                                       [mediaKey]: null,
                                     }));
 
-                                        const assetAlt =
-                                          typeof asset?.alt === "string"
-                                            ? asset.alt
-                                            : "";
+                                    const assetAlt =
+                                      typeof asset?.alt === "string"
+                                        ? asset.alt
+                                        : "";
+
                                     setMedia((items) =>
                                       items.map((x) =>
                                         x.clientId === clientId
-                                              ? {
-                                                  ...x,
-                                                  url: asset.url,
-                                                  alt:
-                                                    String(x?.alt ?? "").trim()
-                                                      .length
-                                                      ? x.alt
-                                                      : assetAlt || x.alt,
-                                                }
+                                          ? {
+                                              ...x,
+                                              url: asset.url,
+                                              alt:
+                                                String(x?.alt ?? "").trim()
+                                                  .length
+                                                  ? x.alt
+                                                  : assetAlt || x.alt,
+                                            }
                                           : x,
                                       ),
                                     );
