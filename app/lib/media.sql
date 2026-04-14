@@ -10,10 +10,110 @@ CREATE TABLE IF NOT EXISTS media_assets (
   type        TEXT NOT NULL CHECK (type IN ('image', 'video')),
   url         TEXT NOT NULL,
   poster_url  TEXT,
-  alt         TEXT,
+  alt         TEXT NOT NULL,
   caption     TEXT,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  CONSTRAINT media_assets_url_length_chk CHECK (length(url) <= 2048),
+  CONSTRAINT media_assets_poster_url_length_chk CHECK (
+    poster_url IS NULL OR length(poster_url) <= 2048
+  ),
+  CONSTRAINT media_assets_alt_length_chk CHECK (length(alt) <= 300),
+  CONSTRAINT media_assets_caption_length_chk CHECK (
+    caption IS NULL OR length(caption) <= 1000
+  )
 );
+
+-- Migration helper: older versions allowed NULL/blank alt.
+-- Backfill before enforcing NOT NULL.
+UPDATE media_assets
+SET alt = LEFT(
+  COALESCE(
+    NULLIF(BTRIM(caption), ''),
+    NULLIF(
+      INITCAP(
+        REPLACE(
+          REPLACE(
+            REGEXP_REPLACE(
+              REGEXP_REPLACE(split_part(url, '?', 1), '^.*/', ''),
+              E'\\.[^.]*$',
+              ''
+            ),
+            '_',
+            ' '
+          ),
+          '-',
+          ' '
+        )
+      ),
+      ''
+    ),
+    CASE WHEN type = 'video' THEN 'Video' ELSE 'Image' END
+  ),
+  300
+)
+WHERE alt IS NULL OR BTRIM(alt) = '';
+
+-- Safety clamp for existing rows before adding length constraints.
+UPDATE media_assets
+SET alt = LEFT(alt, 300)
+WHERE length(alt) > 300;
+
+UPDATE media_assets
+SET caption = LEFT(caption, 1000)
+WHERE caption IS NOT NULL AND length(caption) > 1000;
+
+ALTER TABLE media_assets
+  ALTER COLUMN alt SET NOT NULL;
+
+-- Migration helper: add max-length constraints for text columns.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'media_assets_url_length_chk'
+      AND conrelid = 'media_assets'::regclass
+  ) THEN
+    ALTER TABLE media_assets
+      ADD CONSTRAINT media_assets_url_length_chk
+      CHECK (length(url) <= 2048);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'media_assets_poster_url_length_chk'
+      AND conrelid = 'media_assets'::regclass
+  ) THEN
+    ALTER TABLE media_assets
+      ADD CONSTRAINT media_assets_poster_url_length_chk
+      CHECK (poster_url IS NULL OR length(poster_url) <= 2048);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'media_assets_alt_length_chk'
+      AND conrelid = 'media_assets'::regclass
+  ) THEN
+    ALTER TABLE media_assets
+      ADD CONSTRAINT media_assets_alt_length_chk
+      CHECK (length(alt) <= 300);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'media_assets_caption_length_chk'
+      AND conrelid = 'media_assets'::regclass
+  ) THEN
+    ALTER TABLE media_assets
+      ADD CONSTRAINT media_assets_caption_length_chk
+      CHECK (caption IS NULL OR length(caption) <= 1000);
+  END IF;
+END;
+$$;
 
 -- De-dupe by URL so assets referenced in Projects only create one row.
 CREATE UNIQUE INDEX IF NOT EXISTS media_assets_url_uidx ON media_assets (url);

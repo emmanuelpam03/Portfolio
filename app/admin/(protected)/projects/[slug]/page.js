@@ -21,12 +21,11 @@ export default async function AdminEditProjectPage({ params }) {
 
   const project = await getProjectBySlugAdmin(slug);
 
-  const { assets: mediaLibrary } = await getMediaAssetsAdmin({ limit: 120 });
-
   if (!project) {
     notFound();
   }
 
+  const { assets: mediaLibrary } = await getMediaAssetsAdmin({ limit: 120 });
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-2xl p-7 sm:p-10">

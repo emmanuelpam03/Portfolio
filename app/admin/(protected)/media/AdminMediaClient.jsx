@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 
 import {
@@ -104,6 +104,20 @@ function inferAssetTypeFromFile(file) {
   return mime.startsWith("video/") ? "video" : "image";
 }
 
+function inferAltFromFilename(filename) {
+  const name = String(filename ?? "").trim();
+  if (!name) return "";
+
+  const withoutExt = name.replace(/\.[^/.]+$/, "");
+  const cleaned = withoutExt
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return "";
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
 export default function AdminMediaClient({ initialAssets, setupMessage }) {
   const readyForDbWrites = !setupMessage;
 
@@ -114,11 +128,29 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
   const [assets, setAssets] = useState(() => initial);
 
   const [uploading, setUploading] = useState(false);
+  const uploadingRef = useRef(false);
   const [uploadError, setUploadError] = useState(null);
   const [actionError, setActionError] = useState(null);
 
+  const [uploadAlt, setUploadAlt] = useState("");
+
   const [deletingIds, setDeletingIds] = useState(() => ({}));
   const [viewerAsset, setViewerAsset] = useState(null);
+
+  useEffect(() => {
+    if (!viewerAsset) return;
+
+    function onKeyDown(event) {
+      if (event.key === "Escape") {
+        setViewerAsset(null);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [viewerAsset]);
 
   async function handleFile(file) {
     if (!file) return;
@@ -126,14 +158,40 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
     setUploadError(null);
     setActionError(null);
 
+    if (uploadingRef.current) {
+      setUploadError("An upload is already in progress. Please wait.");
+      return;
+    }
+
     if (!readyForDbWrites) {
       setUploadError(setupMessage || "Database not ready.");
       return;
     }
 
+    uploadingRef.current = true;
     setUploading(true);
 
     const assetType = inferAssetTypeFromFile(file);
+    let altText = String(uploadAlt ?? "").trim();
+    if (!altText) {
+      const inferred = inferAltFromFilename(file?.name);
+      if (inferred) {
+        altText = inferred;
+        setUploadAlt(inferred);
+      }
+    }
+
+    if (altText.length > 200) {
+      altText = altText.slice(0, 200);
+      setUploadAlt(altText);
+    }
+
+    if (!altText) {
+      uploadingRef.current = false;
+      setUploading(false);
+      setUploadError("Alt text is required.");
+      return;
+    }
 
     try {
       const { secureUrl } = await uploadToCloudinary({
@@ -145,6 +203,7 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
       const result = await upsertMediaAssetAction({
         type: assetType,
         url: secureUrl,
+        alt: altText,
       });
       if (!result?.ok || !result?.asset) {
         throw new Error(result?.message || "Unable to save media.");
@@ -174,9 +233,12 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
           return true;
         });
       });
+
+      setUploadAlt("");
     } catch (error) {
       setUploadError(toErrorMessage(error));
     } finally {
+      uploadingRef.current = false;
       setUploading(false);
     }
   }
@@ -214,6 +276,28 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
             <p className="text-sm text-gray-700 Ovo">{setupMessage}</p>
           </div>
         ) : null}
+
+        <div className="mt-4">
+          <label
+            htmlFor="admin-media-alt"
+            className="block text-sm text-gray-700 Ovo font-medium"
+          >
+            Alt text <span className="text-red-600">*</span>
+          </label>
+          <input
+            id="admin-media-alt"
+            type="text"
+            value={uploadAlt}
+            maxLength={200}
+            disabled={uploading || !readyForDbWrites}
+            onChange={(e) => setUploadAlt(e.target.value)}
+            placeholder="Describe the media for accessibility"
+            className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-800 Ovo outline-none focus:ring-2 focus:ring-purple-200 disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+          <p className="text-xs text-gray-500 Ovo mt-2">
+            Required. Used as image alt text and for screen readers.
+          </p>
+        </div>
 
         <div
           className="mt-4 rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 p-6 text-center"
@@ -365,7 +449,7 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
           <button
             type="button"
             onClick={() => setViewerAsset(null)}
-            className="absolute top-6 right-6 w-10 h-10 rounded-full text-white hover:bg-white/10 transition-all duration-300 z-50"
+            className="absolute top-6 right-6 w-10 h-10 rounded-full text-white inline-flex items-center justify-center hover:bg-white/10 transition-all duration-300 z-50"
             aria-label="Close preview"
             title="Close (ESC)"
           >

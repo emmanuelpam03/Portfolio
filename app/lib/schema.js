@@ -54,6 +54,6 @@ export const mediaAssetSchema = z.object({
   type: z.enum(["image", "video"]),
   url: z.string().url("Enter a valid media URL"),
   poster_url: z.string().url("Enter a valid poster URL").optional().nullable(),
-  alt: z.string().trim().max(200).optional().nullable(),
+  alt: z.string().trim().min(1, "Alt text is required").max(200),
   caption: z.string().trim().max(500).optional().nullable(),
 });

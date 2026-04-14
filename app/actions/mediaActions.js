@@ -22,7 +22,7 @@ function normalizeMediaAssetInput(input) {
     type: input?.type === "video" ? "video" : "image",
     url: String(input?.url ?? "").trim(),
     poster_url: input?.poster_url ? String(input.poster_url).trim() : null,
-    alt: input?.alt ? String(input.alt).trim() : null,
+    alt: String(input?.alt ?? "").trim(),
     caption: input?.caption ? String(input.caption).trim() : null,
   };
 }
@@ -68,37 +68,69 @@ export async function getMediaAssetsAdmin({ limit = 200 } = {}) {
 }
 
 // Backfill any existing project media into the centralized media library.
-// This is safe to run repeatedly (INSERT ... ON CONFLICT DO NOTHING).
+// This is safe to run repeatedly (INSERT ... ON CONFLICT merges missing metadata).
 export async function syncMediaAssetsFromProjectsAdmin() {
   await requireAdmin();
 
   try {
     await sql.transaction([
       sql`
-        INSERT INTO media_assets (type, url)
-        SELECT 'image', TRIM(hero_image_url)
-        FROM projects
-        WHERE NULLIF(TRIM(hero_image_url), '') IS NOT NULL
-        ON CONFLICT (url) DO NOTHING
-      `,
-      sql`
         INSERT INTO media_assets (type, url, poster_url, alt, caption)
         SELECT
-          type,
-          TRIM(url),
-          NULLIF(TRIM(poster_url), ''),
-          NULLIF(TRIM(alt), ''),
-          NULLIF(TRIM(caption), '')
-        FROM project_media
-        WHERE NULLIF(TRIM(url), '') IS NOT NULL
-        ON CONFLICT (url) DO NOTHING
+          pm.type,
+          TRIM(pm.url),
+          NULLIF(TRIM(pm.poster_url), ''),
+          COALESCE(
+            NULLIF(TRIM(pm.alt), ''),
+            NULLIF(TRIM(pm.caption), ''),
+            CASE
+              WHEN pm.type = 'video' THEN CONCAT('Video for ', p.title)
+              ELSE CONCAT('Image for ', p.title)
+            END
+          ),
+          NULLIF(TRIM(pm.caption), '')
+        FROM project_media pm
+        JOIN projects p ON p.id = pm.project_id
+        WHERE NULLIF(TRIM(pm.url), '') IS NOT NULL
+        ON CONFLICT (url) DO UPDATE
+        SET
+          type = CASE
+            WHEN media_assets.type = 'video' OR EXCLUDED.type = 'video'
+            THEN 'video'
+            ELSE 'image'
+          END,
+          poster_url = COALESCE(media_assets.poster_url, EXCLUDED.poster_url),
+          alt = COALESCE(NULLIF(media_assets.alt, ''), EXCLUDED.alt),
+          caption = COALESCE(media_assets.caption, EXCLUDED.caption)
       `,
       sql`
-        INSERT INTO media_assets (type, url)
-        SELECT 'image', TRIM(poster_url)
-        FROM project_media
-        WHERE NULLIF(TRIM(poster_url), '') IS NOT NULL
-        ON CONFLICT (url) DO NOTHING
+        INSERT INTO media_assets (type, url, alt)
+        SELECT
+          'image',
+          TRIM(p.hero_image_url),
+          CONCAT('Hero image for ', p.title)
+        FROM projects p
+        WHERE NULLIF(TRIM(p.hero_image_url), '') IS NOT NULL
+        ON CONFLICT (url) DO UPDATE
+        SET
+          alt = COALESCE(NULLIF(media_assets.alt, ''), EXCLUDED.alt)
+      `,
+      sql`
+        INSERT INTO media_assets (type, url, alt)
+        SELECT
+          'image',
+          TRIM(pm.poster_url),
+          COALESCE(
+            NULLIF(TRIM(pm.alt), ''),
+            NULLIF(TRIM(pm.caption), ''),
+            CONCAT('Poster image for ', p.title)
+          )
+        FROM project_media pm
+        JOIN projects p ON p.id = pm.project_id
+        WHERE NULLIF(TRIM(pm.poster_url), '') IS NOT NULL
+        ON CONFLICT (url) DO UPDATE
+        SET
+          alt = COALESCE(NULLIF(media_assets.alt, ''), EXCLUDED.alt)
       `,
     ]);
 
@@ -159,14 +191,14 @@ export async function upsertMediaAssetAction(input) {
         ${data.type},
         ${data.url},
         ${data.poster_url ?? null},
-        ${data.alt ?? null},
+        ${data.alt},
         ${data.caption ?? null}
       )
       ON CONFLICT (url) DO UPDATE
       SET
         type = EXCLUDED.type,
         poster_url = COALESCE(EXCLUDED.poster_url, media_assets.poster_url),
-        alt = COALESCE(EXCLUDED.alt, media_assets.alt),
+        alt = EXCLUDED.alt,
         caption = COALESCE(EXCLUDED.caption, media_assets.caption)
       RETURNING id, type, url, poster_url, alt, caption
     `;

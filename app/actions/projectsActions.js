@@ -70,6 +70,7 @@ async function tryUpsertMediaAssetsForProject(data) {
   const items = [];
 
   const heroUrl = String(data?.hero_image_url ?? "").trim();
+  const posterUrls = new Set();
   if (heroUrl) {
     items.push({ type: "image", url: heroUrl, poster_url: null, alt: null, caption: null });
   }
@@ -90,6 +91,7 @@ async function tryUpsertMediaAssetsForProject(data) {
 
     const posterUrl = trimOrNull(item?.poster_url);
     if (posterUrl) {
+      posterUrls.add(posterUrl);
       items.push({ type: "image", url: posterUrl, poster_url: null, alt: null, caption: null });
     }
   }
@@ -99,7 +101,51 @@ async function tryUpsertMediaAssetsForProject(data) {
   const byUrl = new Map();
   for (const item of items) {
     if (!item.url) continue;
-    if (!byUrl.has(item.url)) byUrl.set(item.url, item);
+
+    const existing = byUrl.get(item.url);
+    if (!existing) {
+      byUrl.set(item.url, item);
+      continue;
+    }
+
+    if (existing.type !== "video" && item.type === "video") {
+      existing.type = "video";
+    }
+
+    if (existing.poster_url == null && item.poster_url) {
+      existing.poster_url = item.poster_url;
+    }
+    if (existing.alt == null && item.alt) {
+      existing.alt = item.alt;
+    }
+    if (existing.caption == null && item.caption) {
+      existing.caption = item.caption;
+    }
+  }
+
+  const projectTitle = trimOrNull(data?.title) ?? "Project";
+  for (const item of byUrl.values()) {
+    if (item.alt == null) {
+      if (item.caption) {
+        item.alt = item.caption;
+      } else if (item.type === "video") {
+        item.alt = `Video for ${projectTitle}`;
+      } else if (item.url === heroUrl) {
+        item.alt = `Hero image for ${projectTitle}`;
+      } else if (posterUrls.has(item.url)) {
+        item.alt = `Poster image for ${projectTitle}`;
+      } else {
+        item.alt = `Media for ${projectTitle}`;
+      }
+    }
+
+    if (!item.alt) {
+      item.alt = item.type === "video" ? "Video" : "Image";
+    }
+
+    if (item.alt.length > 200) {
+      item.alt = item.alt.slice(0, 200);
+    }
   }
 
   const queries = Array.from(byUrl.values()).map(
@@ -115,15 +161,19 @@ async function tryUpsertMediaAssetsForProject(data) {
         ${item.type},
         ${item.url},
         ${item.poster_url ?? null},
-        ${item.alt ?? null},
+        ${item.alt},
         ${item.caption ?? null}
       )
       ON CONFLICT (url) DO UPDATE
       SET
-        type = EXCLUDED.type,
-        poster_url = COALESCE(EXCLUDED.poster_url, media_assets.poster_url),
-        alt = COALESCE(EXCLUDED.alt, media_assets.alt),
-        caption = COALESCE(EXCLUDED.caption, media_assets.caption)
+        type = CASE
+          WHEN media_assets.type = 'video' OR EXCLUDED.type = 'video'
+          THEN 'video'
+          ELSE 'image'
+        END,
+        poster_url = COALESCE(media_assets.poster_url, EXCLUDED.poster_url),
+        alt = COALESCE(NULLIF(media_assets.alt, ''), EXCLUDED.alt),
+        caption = COALESCE(media_assets.caption, EXCLUDED.caption)
     `,
   );
 
