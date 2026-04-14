@@ -198,7 +198,7 @@ export async function upsertMediaAssetAction(input) {
       SET
         type = EXCLUDED.type,
         poster_url = COALESCE(EXCLUDED.poster_url, media_assets.poster_url),
-        alt = EXCLUDED.alt,
+        alt = COALESCE(NULLIF(BTRIM(EXCLUDED.alt), ''), media_assets.alt),
         caption = COALESCE(EXCLUDED.caption, media_assets.caption)
       RETURNING id, type, url, poster_url, alt, caption
     `;
@@ -233,17 +233,105 @@ export async function deleteMediaAssetAction(input) {
   }
 
   try {
-    const rows = await sql`
-      DELETE FROM media_assets
+    const assets = await sql`
+      SELECT id, url
+      FROM media_assets
       WHERE id = ${id}
-      RETURNING id
+      LIMIT 1
     `;
 
-    if (!rows?.length) {
+    if (!assets?.length) {
       return { ok: false, message: "Media not found." };
     }
 
+    const url = String(assets[0]?.url ?? "").trim();
+    if (!url) {
+      return { ok: false, message: "Media URL is missing." };
+    }
+
+    let affectedSlugs = [];
+
+    try {
+      const heroProjects = await sql`
+        SELECT slug, title
+        FROM projects
+        WHERE NULLIF(TRIM(hero_image_url), '') = ${url}
+        LIMIT 6
+      `;
+
+      if (heroProjects?.length) {
+        const names = heroProjects
+          .map((project) => String(project?.title ?? project?.slug ?? "").trim())
+          .filter(Boolean)
+          .slice(0, 5);
+
+        const suffix = heroProjects.length > 5 ? "…" : "";
+        const list = names.length ? ` (${names.join(", ")}${suffix})` : "";
+
+        return {
+          ok: false,
+          message:
+            "This media is currently used as a project hero image" +
+            list +
+            ". Replace the hero image first, then delete the media.",
+        };
+      }
+
+      const projectRows = await sql`
+        SELECT DISTINCT p.slug
+        FROM project_media pm
+        JOIN projects p ON p.id = pm.project_id
+        WHERE NULLIF(TRIM(pm.url), '') = ${url}
+           OR NULLIF(TRIM(pm.poster_url), '') = ${url}
+        LIMIT 50
+      `;
+
+      affectedSlugs = Array.isArray(projectRows)
+        ? projectRows
+            .map((row) => String(row?.slug ?? "").trim())
+            .filter(Boolean)
+        : [];
+
+      await sql.transaction([
+        sql`
+          UPDATE project_media
+          SET poster_url = NULL
+          WHERE NULLIF(TRIM(poster_url), '') = ${url}
+        `,
+        sql`
+          DELETE FROM project_media
+          WHERE NULLIF(TRIM(url), '') = ${url}
+        `,
+        sql`
+          DELETE FROM media_assets
+          WHERE id = ${id}
+          RETURNING id
+        `,
+      ]);
+    } catch (error) {
+      if (isMissingProjectsTables(error)) {
+        const rows = await sql`
+          DELETE FROM media_assets
+          WHERE id = ${id}
+          RETURNING id
+        `;
+
+        if (!rows?.length) {
+          return { ok: false, message: "Media not found." };
+        }
+      } else {
+        throw error;
+      }
+    }
+
     revalidatePath("/admin/media");
+    revalidatePath("/admin/projects");
+    revalidatePath("/projects");
+
+    for (const slug of affectedSlugs.slice(0, 25)) {
+      revalidatePath(`/admin/projects/${slug}`);
+      revalidatePath(`/projects/${slug}`);
+    }
 
     return { ok: true, message: null };
   } catch (error) {

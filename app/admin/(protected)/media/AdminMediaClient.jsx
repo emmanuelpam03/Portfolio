@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 import {
@@ -135,14 +136,69 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
   const [uploadAlt, setUploadAlt] = useState("");
 
   const [deletingIds, setDeletingIds] = useState(() => ({}));
+  const [confirmDeleteAsset, setConfirmDeleteAsset] = useState(null);
   const [viewerAsset, setViewerAsset] = useState(null);
+  const [viewerIsOpen, setViewerIsOpen] = useState(false);
+  const [portalTarget, setPortalTarget] = useState(null);
+  const closeViewerTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    setPortalTarget(document.body);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (closeViewerTimeoutRef.current) {
+        clearTimeout(closeViewerTimeoutRef.current);
+        closeViewerTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!viewerAsset) {
+      setViewerIsOpen(false);
+      return;
+    }
+
+    const raf = requestAnimationFrame(() => {
+      setViewerIsOpen(true);
+    });
+
+    return () => {
+      cancelAnimationFrame(raf);
+    };
+  }, [viewerAsset]);
+
+  function openViewer(asset) {
+    if (closeViewerTimeoutRef.current) {
+      clearTimeout(closeViewerTimeoutRef.current);
+      closeViewerTimeoutRef.current = null;
+    }
+
+    setViewerIsOpen(false);
+    setViewerAsset(asset);
+  }
+
+  function requestCloseViewer() {
+    setViewerIsOpen(false);
+
+    if (closeViewerTimeoutRef.current) {
+      clearTimeout(closeViewerTimeoutRef.current);
+    }
+
+    closeViewerTimeoutRef.current = setTimeout(() => {
+      closeViewerTimeoutRef.current = null;
+      setViewerAsset(null);
+    }, 300);
+  }
 
   useEffect(() => {
     if (!viewerAsset) return;
 
     function onKeyDown(event) {
       if (event.key === "Escape") {
-        setViewerAsset(null);
+        requestCloseViewer();
       }
     }
 
@@ -268,7 +324,7 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
       <div className="lg:col-span-1 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-lg p-6">
         <p className="text-base font-semibold text-gray-900 Ovo">Upload</p>
         <p className="text-sm text-gray-600 Ovo mt-1">
-          Upload images and videos (Cloudinary).
+          Upload images and videos.
         </p>
 
         {setupMessage ? (
@@ -294,9 +350,6 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
             placeholder="Describe the media for accessibility"
             className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-800 Ovo outline-none focus:ring-2 focus:ring-purple-200 disabled:opacity-60 disabled:cursor-not-allowed"
           />
-          <p className="text-xs text-gray-500 Ovo mt-2">
-            Required. Used as image alt text and for screen readers.
-          </p>
         </div>
 
         <div
@@ -371,6 +424,7 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
             {assets.map((asset) => {
               const isVideo = asset.type === "video";
               const deleting = Boolean(deletingIds[asset.id]);
+              const canUseNextImage = !isVideo && canPreviewWithNextImage(asset.url);
 
               return (
                 <div
@@ -380,31 +434,33 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
                   <div
                     role="button"
                     tabIndex={0}
-                    onClick={() => setViewerAsset(asset)}
+                    onClick={() => openViewer(asset)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        setViewerAsset(asset);
+                        openViewer(asset);
                       }
                     }}
-                    className="relative aspect-square cursor-pointer overflow-hidden rounded-2xl border border-gray-200"
+                    className="group relative aspect-square cursor-pointer overflow-hidden rounded-2xl border border-gray-200"
                     aria-label={
                       isVideo ? "Open video preview" : "Open image preview"
                     }
                     title={asset.url}
                   >
-                    {!isVideo && canPreviewWithNextImage(asset.url) ? (
-                      <Image
-                        src={asset.url}
-                        alt={asset.alt ? asset.alt : "Media image"}
-                        fill
-                        sizes="(max-width: 1024px) 50vw, 240px"
-                        className="object-cover"
-                      />
-                    ) : !isVideo ? (
-                      <div className="absolute inset-0 flex items-center justify-center text-center p-4">
-                        <p className="text-sm text-gray-700 Ovo">Image</p>
-                      </div>
+                    {!isVideo ? (
+                      canUseNextImage ? (
+                        <Image
+                          src={asset.url}
+                          alt={asset.alt ? asset.alt : "Media image"}
+                          fill
+                          sizes="(max-width: 1024px) 50vw, 240px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-center p-4">
+                          <p className="text-sm text-gray-700 Ovo">Image</p>
+                        </div>
+                      )
                     ) : (
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
                         <p className="text-sm text-gray-700 Ovo">Video</p>
@@ -414,6 +470,17 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
                       </div>
                     )}
 
+                    {asset.alt ? (
+                      <div
+                        className="pointer-events-none absolute inset-0 grid place-items-center bg-black/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                        title={asset.alt}
+                      >
+                        <p className="mx-4 max-w-[88%] text-center text-xs sm:text-sm text-white Ovo leading-snug">
+                          {asset.alt}
+                        </p>
+                      </div>
+                    ) : null}
+
                     <button
                       type="button"
                       disabled={deleting}
@@ -421,17 +488,13 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
                         e.preventDefault();
                         e.stopPropagation();
 
-                        const confirmed = window.confirm(
-                          "Remove this media from the library?",
-                        );
-                        if (!confirmed) return;
-                        void removeAsset(asset);
+                        setConfirmDeleteAsset(asset);
                       }}
                       className="absolute top-2 right-2 w-7 h-7 rounded-full border border-gray-200 bg-white/95 text-gray-700 inline-flex items-center justify-center hover:bg-white transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
                       aria-label="Remove media"
                       title="Remove"
                     >
-                      <X className="w-3.5 h-3.5" aria-hidden="true" />
+                      <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -441,39 +504,105 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
         )}
       </div>
 
-      {viewerAsset ? (
-        <div
-          className="fixed inset-0 z-50 bg-black flex items-center justify-center"
-          onClick={() => setViewerAsset(null)}
-        >
-          <button
-            type="button"
-            onClick={() => setViewerAsset(null)}
-            className="absolute top-6 right-6 w-10 h-10 rounded-full text-white inline-flex items-center justify-center hover:bg-white/10 transition-all duration-300 z-50"
-            aria-label="Close preview"
-            title="Close (ESC)"
-          >
-            <X className="w-6 h-6" aria-hidden="true" />
-          </button>
+      {confirmDeleteAsset && portalTarget
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4"
+              onClick={() => setConfirmDeleteAsset(null)}
+            >
+              <div
+                className="w-full max-w-md rounded-3xl border border-gray-200 bg-white/90 backdrop-blur-xl p-6 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p className="text-base font-semibold text-gray-900 Ovo">
+                  Remove media?
+                </p>
+                <p className="text-sm text-gray-600 Ovo mt-2">
+                  This removes it from the media library and any projects that
+                  use it.
+                </p>
 
-          {viewerAsset.type === "video" ? (
-            <video
-              src={viewerAsset.url}
-              controls
-              autoPlay
-              className="max-w-[95vw] max-h-[95vh] object-contain"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <img
-              src={viewerAsset.url}
-              alt={viewerAsset.alt ? viewerAsset.alt : "Media preview"}
-              className="max-w-[95vw] max-h-[95vh] object-contain"
-              onClick={(e) => e.stopPropagation()}
-            />
-          )}
-        </div>
-      ) : null}
+                <div className="mt-5 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium"
+                    onClick={() => setConfirmDeleteAsset(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-red-600 text-sm font-medium"
+                    onClick={() => {
+                      const asset = confirmDeleteAsset;
+                      setConfirmDeleteAsset(null);
+                      void removeAsset(asset);
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>,
+            portalTarget,
+          )
+        : null}
+
+      {viewerAsset && portalTarget
+        ? createPortal(
+            <div
+              className={`fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 transition-opacity duration-300 ease-out ${
+                viewerIsOpen ? "opacity-100" : "opacity-0"
+              }`}
+              onClick={requestCloseViewer}
+            >
+              <div
+                className={`transform transition-all duration-300 ease-out ${
+                  viewerIsOpen ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {viewerAsset.type === "video" ? (
+                  <video
+                    src={viewerAsset.url}
+                    controls
+                    autoPlay
+                    width={1200}
+                    height={800}
+                    className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain"
+                  />
+                ) : canPreviewWithNextImage(viewerAsset.url) ? (
+                  <Image
+                    src={viewerAsset.url}
+                    alt={viewerAsset.alt ? viewerAsset.alt : "Media preview"}
+                    width={1200}
+                    height={800}
+                    className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain"
+                    priority
+                  />
+                ) : (
+                  <p className="text-sm text-white/80 Ovo">
+                    Preview unavailable for this image host.
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  requestCloseViewer();
+                }}
+                className="absolute top-6 right-6 text-white text-2xl cursor-pointer"
+                aria-label="Close preview"
+                title="Close (ESC)"
+              >
+                ✕
+              </button>
+            </div>,
+            portalTarget,
+          )
+        : null}
     </div>
   );
 }

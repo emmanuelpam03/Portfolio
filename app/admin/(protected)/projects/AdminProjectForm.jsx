@@ -11,6 +11,8 @@ import {
   Video,
 } from "lucide-react";
 
+import { upsertMediaAssetAction } from "@/app/actions/mediaActions";
+
 const initialState = { ok: false, message: null, errors: {}, fields: {} };
 
 function makeClientId() {
@@ -31,6 +33,20 @@ function truncateUrl(url, maxLength = 72) {
 function toErrorMessage(error) {
   if (error instanceof Error && error.message) return error.message;
   return "Upload failed.";
+}
+
+function inferAltFromFilename(filename) {
+  const name = String(filename ?? "").trim();
+  if (!name) return "";
+
+  const withoutExt = name.replace(/\.[^/.]+$/, "");
+  const cleaned = withoutExt
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return "";
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
 async function getCloudinarySignature() {
@@ -340,6 +356,26 @@ export default function AdminProjectForm({
                     resourceType: "image",
                   });
                   setHeroImageUrl(result.secureUrl);
+
+                  let altText = inferAltFromFilename(file?.name);
+                  if (!altText) altText = "Hero image";
+                  if (altText.length > 200) altText = altText.slice(0, 200);
+
+                  const upserted = await upsertMediaAssetAction({
+                    type: "image",
+                    url: result.secureUrl,
+                    alt: altText,
+                  });
+
+                  if (!upserted?.ok) {
+                    const detail =
+                      typeof upserted?.message === "string" && upserted.message.length
+                        ? upserted.message
+                        : "Unable to save media.";
+                    setHeroUploadError(
+                      `Uploaded, but couldn't add to media library: ${detail}`,
+                    );
+                  }
                 } catch (error) {
                   setHeroUploadError(toErrorMessage(error));
                 } finally {
@@ -773,13 +809,52 @@ export default function AdminProjectForm({
                                   file,
                                   resourceType: isVideo ? "video" : "image",
                                 });
+
+                                const existingAlt = String(item?.alt ?? "").trim();
+                                let nextAlt = existingAlt;
+                                if (!nextAlt) {
+                                  nextAlt = inferAltFromFilename(file?.name);
+                                }
+                                if (!nextAlt) {
+                                  nextAlt = isVideo ? "Video" : "Image";
+                                }
+                                if (nextAlt.length > 200) {
+                                  nextAlt = nextAlt.slice(0, 200);
+                                }
+
                                 setMedia((items) =>
                                   items.map((x) =>
                                     x.clientId === clientId
-                                      ? { ...x, url: result.secureUrl }
+                                      ? {
+                                          ...x,
+                                          url: result.secureUrl,
+                                          alt:
+                                            String(x?.alt ?? "").trim().length
+                                              ? x.alt
+                                              : nextAlt,
+                                        }
                                       : x,
                                   ),
                                 );
+
+                                const upserted = await upsertMediaAssetAction({
+                                  type: isVideo ? "video" : "image",
+                                  url: result.secureUrl,
+                                  alt: nextAlt,
+                                });
+
+                                if (!upserted?.ok) {
+                                  const detail =
+                                    typeof upserted?.message === "string" &&
+                                    upserted.message.length
+                                      ? upserted.message
+                                      : "Unable to save media.";
+                                  setMediaUploadErrors((prev) => ({
+                                    ...prev,
+                                    [mediaKey]:
+                                      `Uploaded, but couldn't add to media library: ${detail}`,
+                                  }));
+                                }
                               } catch (error) {
                                 setMediaUploadErrors((prev) => ({
                                   ...prev,
@@ -871,10 +946,23 @@ export default function AdminProjectForm({
                                       ...prev,
                                       [mediaKey]: null,
                                     }));
+
+                                        const assetAlt =
+                                          typeof asset?.alt === "string"
+                                            ? asset.alt
+                                            : "";
                                     setMedia((items) =>
                                       items.map((x) =>
                                         x.clientId === clientId
-                                          ? { ...x, url: asset.url }
+                                              ? {
+                                                  ...x,
+                                                  url: asset.url,
+                                                  alt:
+                                                    String(x?.alt ?? "").trim()
+                                                      .length
+                                                      ? x.alt
+                                                      : assetAlt || x.alt,
+                                                }
                                           : x,
                                       ),
                                     );
@@ -1033,6 +1121,31 @@ export default function AdminProjectForm({
                                           : x,
                                       ),
                                     );
+
+                                    let altText = inferAltFromFilename(file?.name);
+                                    if (!altText) altText = "Poster image";
+                                    if (altText.length > 200) {
+                                      altText = altText.slice(0, 200);
+                                    }
+
+                                    const upserted = await upsertMediaAssetAction({
+                                      type: "image",
+                                      url: result.secureUrl,
+                                      alt: altText,
+                                    });
+
+                                    if (!upserted?.ok) {
+                                      const detail =
+                                        typeof upserted?.message === "string" &&
+                                        upserted.message.length
+                                          ? upserted.message
+                                          : "Unable to save media.";
+                                      setMediaUploadErrors((prev) => ({
+                                        ...prev,
+                                        [posterKey]:
+                                          `Uploaded, but couldn't add to media library: ${detail}`,
+                                      }));
+                                    }
                                   } catch (error) {
                                     setMediaUploadErrors((prev) => ({
                                       ...prev,
@@ -1147,25 +1260,29 @@ export default function AdminProjectForm({
                           ) : null}
                         </div>
                       </div>
-                    ) : (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
-                          Alt text (optional)
-                        </label>
-                        <input
-                          type="text"
-                          value={item.alt}
-                          onChange={(e) => {
-                            const nextAlt = e.target.value;
-                            setMedia((items) =>
-                              items.map((x, i) => (i === index ? { ...x, alt: nextAlt } : x)),
-                            );
-                          }}
-                          placeholder="Describe the image"
-                          className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
-                        />
-                      </div>
-                    )}
+                    ) : null}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
+                        Alt text
+                      </label>
+                      <input
+                        type="text"
+                        value={item.alt}
+                        onChange={(e) => {
+                          const nextAlt = e.target.value;
+                          setMedia((items) =>
+                            items.map((x, i) =>
+                              i === index ? { ...x, alt: nextAlt } : x,
+                            ),
+                          );
+                        }}
+                        placeholder={
+                          isVideo ? "Describe the video" : "Describe the image"
+                        }
+                        className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
+                      />
+                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 Ovo mb-2">

@@ -47,11 +47,49 @@ CREATE TABLE IF NOT EXISTS project_media (
   type        TEXT NOT NULL CHECK (type IN ('image', 'video')),
   url         TEXT NOT NULL,
   poster_url  TEXT,
-  alt         TEXT,
+  alt         TEXT NOT NULL,
   caption     TEXT,
   sort_order  INT NOT NULL DEFAULT 0,
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Migration helper: older versions allowed NULL/blank alt.
+-- Backfill before enforcing NOT NULL.
+UPDATE project_media
+SET alt = LEFT(
+  COALESCE(
+    NULLIF(BTRIM(caption), ''),
+    NULLIF(
+      INITCAP(
+        REPLACE(
+          REPLACE(
+            REGEXP_REPLACE(
+              REGEXP_REPLACE(split_part(url, '?', 1), '^.*/', ''),
+              E'\\.[^.]*$',
+              ''
+            ),
+            '_',
+            ' '
+          ),
+          '-',
+          ' '
+        )
+      ),
+      ''
+    ),
+    CASE WHEN type = 'video' THEN 'Video' ELSE 'Image' END
+  ),
+  200
+)
+WHERE alt IS NULL OR BTRIM(alt) = '';
+
+-- Safety clamp for existing rows.
+UPDATE project_media
+SET alt = LEFT(alt, 200)
+WHERE length(alt) > 200;
+
+ALTER TABLE project_media
+  ALTER COLUMN alt SET NOT NULL;
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_projects_slug ON projects(slug);

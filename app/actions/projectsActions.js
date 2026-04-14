@@ -43,6 +43,56 @@ function trimOrNull(value) {
   return text.length ? text : null;
 }
 
+function inferAltFromUrl(url) {
+  const value = String(url ?? "").trim();
+  if (!value) return null;
+
+  try {
+    const parsed = new URL(value);
+    const segments = String(parsed.pathname ?? "")
+      .split("/")
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+    const filename = segments[segments.length - 1] ?? "";
+    if (!filename) return null;
+
+    const withoutExt = filename.replace(/\.[^.]+$/, "");
+
+    let decoded = withoutExt;
+    try {
+      decoded = decodeURIComponent(withoutExt);
+    } catch {
+      decoded = withoutExt;
+    }
+
+    const normalized = decoded
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!normalized) return null;
+
+    return normalized.replace(/\b\w/g, (character) => character.toUpperCase());
+  } catch {
+    return null;
+  }
+}
+
+function generateProjectMediaAlt({ type, url, caption, projectTitle }) {
+  const captionText = trimOrNull(caption);
+  if (captionText) return captionText;
+
+  const inferred = inferAltFromUrl(url);
+  if (inferred) return inferred;
+
+  const title = trimOrNull(projectTitle);
+  if (title) {
+    return `${type === "video" ? "Video" : "Image"} for ${title}`;
+  }
+
+  return type === "video" ? "Video" : "Image";
+}
+
 function checkboxToBoolean(value) {
   const normalized = String(value ?? "")
     .trim()
@@ -50,14 +100,26 @@ function checkboxToBoolean(value) {
   return normalized === "on" || normalized === "true" || normalized === "1";
 }
 
-function normalizeMediaItem(item) {
+function normalizeMediaItem(item, { projectTitle } = {}) {
   const type = item?.type === "video" ? "video" : "image";
+  const url = String(item?.url ?? "").trim();
+  const caption = trimOrNull(item?.caption);
+
+  let alt = trimOrNull(item?.alt);
+  if (alt == null) {
+    alt = generateProjectMediaAlt({ type, url, caption, projectTitle });
+  }
+
+  if (alt.length > 200) {
+    alt = alt.slice(0, 200);
+  }
+
   return {
     type,
-    url: String(item?.url ?? "").trim(),
+    url,
     poster_url: trimOrNull(item?.poster_url),
-    alt: trimOrNull(item?.alt),
-    caption: trimOrNull(item?.caption),
+    alt,
+    caption,
   };
 }
 
@@ -186,6 +248,9 @@ async function tryUpsertMediaAssetsForProject(data) {
 }
 
 function parseProjectFormData(formData) {
+  const title = String(formData.get("title") ?? "").trim();
+  const projectTitle = title || "Project";
+
   const rawMediaJson = String(formData.get("media_json") ?? "[]");
   let mediaParsed = [];
 
@@ -197,14 +262,14 @@ function parseProjectFormData(formData) {
   }
 
   return {
-    title: String(formData.get("title") ?? "").trim(),
+    title,
     description: String(formData.get("description") ?? "").trim(),
     hero_image_url: String(formData.get("hero_image_url") ?? "").trim(),
     project_live_url: trimOrNull(formData.get("project_live_url")),
     project_github_url: String(formData.get("project_github_url") ?? "").trim(),
     is_published: checkboxToBoolean(formData.get("is_published")),
     is_featured: checkboxToBoolean(formData.get("is_featured")),
-    media: mediaParsed.map(normalizeMediaItem),
+    media: mediaParsed.map((item) => normalizeMediaItem(item, { projectTitle })),
   };
 }
 
@@ -365,7 +430,7 @@ export async function createProjectAction(_prevState, formData) {
           ${item.type},
           ${item.url},
           ${item.poster_url ?? null},
-          ${item.alt ?? null},
+          ${item.alt},
           ${item.caption ?? null},
           ${index}
         )
@@ -464,7 +529,7 @@ export async function updateProjectAction(prevState, formData) {
           ${item.type},
           ${item.url},
           ${item.poster_url ?? null},
-          ${item.alt ?? null},
+          ${item.alt},
           ${item.caption ?? null},
           ${index}
         )

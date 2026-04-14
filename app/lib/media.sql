@@ -56,6 +56,14 @@ WHERE alt IS NULL OR BTRIM(alt) = '';
 
 -- Safety clamp for existing rows before adding length constraints.
 UPDATE media_assets
+SET url = LEFT(url, 2048)
+WHERE length(url) > 2048;
+
+UPDATE media_assets
+SET poster_url = LEFT(poster_url, 2048)
+WHERE poster_url IS NOT NULL AND length(poster_url) > 2048;
+
+UPDATE media_assets
 SET alt = LEFT(alt, 300)
 WHERE length(alt) > 300;
 

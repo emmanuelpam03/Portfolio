@@ -45,7 +45,7 @@ export default async function AdminProjectsPage({ searchParams }) {
               Projects
             </h2>
             <p className="text-gray-600 Ovo">
-              Add and edit portfolio projects (design-only).
+              Add and edit portfolio projects.
             </p>
           </div>
 
