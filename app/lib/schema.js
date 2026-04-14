@@ -80,10 +80,6 @@ export const aboutUpdateSchema = z.object({
   hero_image_asset_id: z.string().trim().uuid().optional().nullable(),
   about_image_asset_id: z.string().trim().uuid().optional().nullable(),
 
-  cards: z
-    .array(aboutCardSchema)
-    .length(3, "About must have exactly 3 cards")
-    .default([]),
-
+  cards: z.array(aboutCardSchema).length(3, "About must have exactly 3 cards"),
   tools: z.array(aboutToolSchema).default([]),
 });

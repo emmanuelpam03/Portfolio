@@ -97,9 +97,8 @@ BEGIN
   ) THEN
     INSERT INTO about_cards (about_key, title, description, icon_key, sort_order)
     VALUES
-      ('default', 'Languages', 'HTML, CSS, JavaScript React Js, Next Js', 'languages', 0),
+      ('default', 'Languages', 'HTML, CSS, JavaScript, React Js, Next Js', 'languages', 0),
       ('default', 'Education', 'B.Tech in Computer Science', 'education', 1),
-      ('default', 'Projects', 'Built more than 5 projects', 'projects', 2);
-  END IF;
+      ('default', 'Projects', 'Built more than 5 projects', 'projects', 2);  END IF;
 END;
 $$;
