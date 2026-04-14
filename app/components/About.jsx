@@ -1,10 +1,82 @@
+"use client";
+
 import { assets, infoList, toolsData } from "@/assets/assets";
 import Image from "next/image";
 import React from "react";
 import { motion } from "motion/react";
 import { Wrench } from "lucide-react";
 
-const About = () => {
+const fallbackAboutText =
+  "I am an experienced Front-End Developer with a strong passion for creating visually appealing and user-friendly websites. I specialize in building responsive web applications that deliver seamless user experiences across various devices. I am proficient in modern frameworks such as React and Next.js.";
+
+const About = ({ about = null }) => {
+  const aboutText =
+    about && typeof about?.about_text === "string" && about.about_text.trim()
+      ? about.about_text
+      : fallbackAboutText;
+
+  const aboutImageSrc =
+    about && typeof about?.about_image?.url === "string" && about.about_image.url
+      ? about.about_image.url
+      : assets.user_image;
+
+  const aboutImageAlt =
+    about && typeof about?.about_image?.alt === "string" && about.about_image.alt
+      ? about.about_image.alt
+      : "user";
+
+  const iconKeyToIcon = {
+    languages: infoList?.[0]?.icon,
+    education: infoList?.[1]?.icon,
+    projects: infoList?.[2]?.icon,
+  };
+
+  const sortedDbCards = Array.isArray(about?.cards)
+    ? [...about.cards].sort((a, b) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0))
+    : [];
+
+  const cardsForUi = (Array.isArray(infoList) ? infoList.slice(0, 3) : []).map(
+    (fallback, index) => {
+      const dbCard = sortedDbCards[index];
+      const iconKey = dbCard?.icon_key ?? null;
+      const Icon =
+        iconKey && iconKeyToIcon[iconKey] ? iconKeyToIcon[iconKey] : fallback.icon;
+
+      return {
+        Icon,
+        title:
+          dbCard && typeof dbCard?.title === "string" && dbCard.title.trim()
+            ? dbCard.title
+            : fallback.title,
+        description:
+          dbCard && typeof dbCard?.description === "string" && dbCard.description.trim()
+            ? dbCard.description
+            : fallback.description,
+      };
+    },
+  );
+
+  const sortedDbTools = Array.isArray(about?.tools)
+    ? [...about.tools].sort((a, b) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0))
+    : [];
+
+  const toolsForUi = sortedDbTools.length
+    ? sortedDbTools
+        .map((tool, index) => ({
+          key: tool?.media_asset_id ?? tool?.id ?? tool?.url ?? `tool-${index}`,
+          src: tool?.url ?? "",
+          alt:
+            tool && typeof tool?.alt === "string" && tool.alt.trim()
+              ? tool.alt
+              : `Tool ${index + 1}`,
+        }))
+        .filter((tool) => typeof tool.src === "string" && tool.src)
+    : toolsData.map((tool, index) => ({
+        key: `fallback-tool-${index}`,
+        src: tool,
+        alt: "Tool",
+      }));
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -60,11 +132,13 @@ const About = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
 
             {/* Image container */}
-            <div className="relative w-64 sm:w-80 lg:w-96 rounded-3xl overflow-hidden border-4 border-white shadow-2xl">
+            <div className="relative w-64 sm:w-80 lg:w-96 aspect-square rounded-3xl overflow-hidden border-4 border-white shadow-2xl">
               <Image
-                src={assets.user_image}
-                alt="user"
-                className="w-full h-full object-cover"
+                src={aboutImageSrc}
+                alt={aboutImageAlt}
+                fill
+                sizes="(max-width: 640px) 256px, (max-width: 1024px) 320px, 384px"
+                className="object-cover"
               />
             </div>
 
@@ -84,11 +158,7 @@ const About = () => {
           {/* Description */}
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg">
             <p className="text-gray-700 leading-relaxed Ovo text-base sm:text-lg">
-              I am an experienced Front-End Developer with a strong passion for
-              creating visually appealing and user-friendly websites. I
-              specialize in building responsive web applications that deliver
-              seamless user experiences across various devices. I am proficient
-              in modern frameworks such as React and Next.js.
+              {aboutText}
             </p>
           </div>
 
@@ -99,7 +169,7 @@ const About = () => {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
           >
-            {infoList.map(({ icon: Icon, title, description }, index) => (
+            {cardsForUi.map(({ Icon, title, description }, index) => (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -113,7 +183,9 @@ const About = () => {
 
                 <div className="relative z-10">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
-                    <Icon className="w-6 h-6 text-gray-700" aria-hidden="true" />
+                    {Icon ? (
+                      <Icon className="w-6 h-6 text-gray-700" aria-hidden="true" />
+                    ) : null}
                   </div>
                   <h3 className="font-semibold text-gray-800 mb-2 text-base">
                     {title}
@@ -148,21 +220,23 @@ const About = () => {
               transition={{ duration: 0.8, delay: 1 }}
               className="flex items-center justify-center flex-wrap gap-3"
             >
-              {toolsData.map((tool, index) => (
+              {toolsForUi.map((tool, index) => (
                 <motion.div
                   initial={{ opacity: 0, scale: 0 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: 0.05 * index }}
                   whileHover={{ scale: 1.15, rotate: 5 }}
-                  key={index}
+                  key={tool.key}
                   className="group relative w-14 h-14 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 shadow-md hover:shadow-xl flex items-center justify-center cursor-pointer transition-all duration-300 overflow-hidden"
                 >
                   {/* Hover background */}
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                   <Image
-                    src={tool}
-                    alt="Tool"
+                    src={tool.src}
+                    alt={tool.alt}
+                    width={28}
+                    height={28}
                     className="relative z-10 w-7 h-7 object-contain"
                   />
                 </motion.div>

@@ -1,3 +1,5 @@
+"use client";
+
 import { workData } from "@/assets/assets";
 import Link from "next/link";
 import React from "react";

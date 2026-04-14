@@ -1,10 +1,22 @@
+"use client";
+
 import { assets } from "@/assets/assets";
 import Image from "next/image";
 import React from "react";
 import { motion } from "motion/react";
 import { ArrowRight, Briefcase, Download, Hand, MapPin } from "lucide-react";
 
-const Header = () => {
+const Header = ({ heroImage = null }) => {
+  const heroSrc =
+    heroImage && typeof heroImage?.url === "string" && heroImage.url
+      ? heroImage.url
+      : assets.profile_img;
+
+  const heroAlt =
+    heroImage && typeof heroImage?.alt === "string" && heroImage.alt
+      ? heroImage.alt
+      : "Emmanuel Pam";
+
   return (
     <div className="relative w-full min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Animated background elements */}
@@ -142,9 +154,11 @@ const Header = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-[2rem] blur-xl opacity-30 animate-pulse"></div>
             <div className="relative w-56 h-56 sm:w-64 sm:h-64 lg:w-72 lg:h-72 rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl bg-gradient-to-br from-blue-100 to-purple-100">
               <Image
-                src={assets.profile_img}
-                alt="Emmanuel Pam"
-                className="w-full h-full object-cover"
+                src={heroSrc}
+                alt={heroAlt}
+                fill
+                sizes="(max-width: 640px) 224px, (max-width: 1024px) 256px, 288px"
+                className="object-cover"
                 priority
                 loading="eager"
               />

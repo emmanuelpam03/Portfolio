@@ -57,3 +57,33 @@ export const mediaAssetSchema = z.object({
   alt: z.string().trim().min(1, "Alt text is required").max(200),
   caption: z.string().trim().max(500).optional().nullable(),
 });
+
+// About Schemas
+
+export const aboutCardSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(200),
+  description: z.string().trim().min(1, "Description is required").max(1000),
+  icon_key: z.string().trim().max(60).optional().nullable(),
+});
+
+export const aboutToolSchema = z.object({
+  media_asset_id: z.string().trim().uuid("Select a valid media asset"),
+});
+
+export const aboutUpdateSchema = z.object({
+  about_text: z
+    .string()
+    .trim()
+    .min(1, "About text is required")
+    .max(5000, "About text must not exceed 5000 characters"),
+
+  hero_image_asset_id: z.string().trim().uuid().optional().nullable(),
+  about_image_asset_id: z.string().trim().uuid().optional().nullable(),
+
+  cards: z
+    .array(aboutCardSchema)
+    .length(3, "About must have exactly 3 cards")
+    .default([]),
+
+  tools: z.array(aboutToolSchema).default([]),
+});

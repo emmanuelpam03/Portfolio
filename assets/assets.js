@@ -3,8 +3,8 @@ import user_image from "./image.png";
 import profile_img from "./image.png";
 import {
   Brush,
-  Code,
-  Folder,
+  Code2,
+  FolderKanban,
   Globe,
   GraduationCap,
   Layout,
@@ -84,7 +84,7 @@ export const serviceData = [
 
 export const infoList = [
   {
-    icon: Code,
+    icon: Code2,
     title: "Languages",
     description: "HTML, CSS, JavaScript React Js, Next Js",
   },
@@ -94,7 +94,7 @@ export const infoList = [
     description: "B.Tech in Computer Science",
   },
   {
-    icon: Folder,
+    icon: FolderKanban,
     title: "Projects",
     description: "Built more than 5 projects",
   },

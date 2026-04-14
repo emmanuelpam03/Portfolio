@@ -40,6 +40,67 @@ function isMissingProjectsTables(error) {
   );
 }
 
+function isMissingAboutTables(error) {
+  const message = String(error instanceof Error ? error.message : error);
+  return (
+    message.includes('relation "about_content" does not exist') ||
+    message.includes('relation "about_cards" does not exist') ||
+    message.includes('relation "about_tools" does not exist')
+  );
+}
+
+function aboutUsageMessage({ usedAsHero, usedAsAboutImage, usedAsTool }) {
+  const parts = [];
+  if (usedAsHero) parts.push("as the About hero image");
+  if (usedAsAboutImage) parts.push("as the About section image");
+  if (usedAsTool) parts.push("in the About tools list");
+
+  const details = parts.length ? ` (${parts.join(", ")})` : "";
+
+  return (
+    "This media is currently used in your About section" +
+    details +
+    ". Replace/remove it in Admin → About first, then delete the media."
+  );
+}
+
+async function getAboutUsageForMediaAssetId(id) {
+  try {
+    const contentRows = await sql`
+      SELECT hero_image_asset_id, about_image_asset_id
+      FROM about_content
+      WHERE singleton_key = 'default'
+        AND (hero_image_asset_id = ${id} OR about_image_asset_id = ${id})
+      LIMIT 1
+    `;
+
+    const usedAsHero =
+      Array.isArray(contentRows) &&
+      contentRows.length &&
+      String(contentRows[0]?.hero_image_asset_id ?? "") === id;
+
+    const usedAsAboutImage =
+      Array.isArray(contentRows) &&
+      contentRows.length &&
+      String(contentRows[0]?.about_image_asset_id ?? "") === id;
+
+    const toolRows = await sql`
+      SELECT id
+      FROM about_tools
+      WHERE media_asset_id = ${id}
+      LIMIT 1
+    `;
+
+    const usedAsTool = Array.isArray(toolRows) && toolRows.length > 0;
+
+    if (!usedAsHero && !usedAsAboutImage && !usedAsTool) return null;
+    return { usedAsHero, usedAsAboutImage, usedAsTool };
+  } catch (error) {
+    if (isMissingAboutTables(error)) return null;
+    throw error;
+  }
+}
+
 export async function getMediaAssetsAdmin({ limit = 200 } = {}) {
   await requireAdmin();
   const safeLimit = clampLimit(limit, { fallback: 200 });
@@ -249,6 +310,14 @@ export async function deleteMediaAssetAction(input) {
       return { ok: false, message: "Media URL is missing." };
     }
 
+    const aboutUsage = await getAboutUsageForMediaAssetId(id);
+    if (aboutUsage) {
+      return {
+        ok: false,
+        message: aboutUsageMessage(aboutUsage),
+      };
+    }
+
     let affectedSlugs = [];
 
     try {
@@ -261,7 +330,9 @@ export async function deleteMediaAssetAction(input) {
 
       if (heroProjects?.length) {
         const names = heroProjects
-          .map((project) => String(project?.title ?? project?.slug ?? "").trim())
+          .map((project) =>
+            String(project?.title ?? project?.slug ?? "").trim(),
+          )
           .filter(Boolean)
           .slice(0, 5);
 
