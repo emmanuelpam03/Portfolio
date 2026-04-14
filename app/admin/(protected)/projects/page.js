@@ -2,10 +2,9 @@ import Link from "next/link";
 import { unstable_rethrow } from "next/navigation";
 import { Folder } from "lucide-react";
 
-import {
-  deleteProjectAction,
-  getAllProjectsAdmin,
-} from "@/app/actions/projectsActions";
+import { getAllProjectsAdmin } from "@/app/actions/projectsActions";
+
+import AdminProjectDeleteForm from "./AdminProjectDeleteForm";
 
 export const metadata = {
   title: "Admin Projects | Portfolio",
@@ -67,15 +66,7 @@ export default async function AdminProjectsPage() {
                 >
                   Edit
                 </Link>
-                <form action={deleteProjectAction}>
-                  <input type="hidden" name="id" value={p.id} />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-red-600 text-base font-medium"
-                  >
-                    Remove
-                  </button>
-                </form>
+                <AdminProjectDeleteForm id={p.id} />
               </div>
             </div>
           ))}
