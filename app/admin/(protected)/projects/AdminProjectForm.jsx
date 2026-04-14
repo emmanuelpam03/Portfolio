@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useActionState, useMemo, useState } from "react";
 import {
   ArrowDown,
@@ -217,16 +218,29 @@ export default function AdminProjectForm({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {heroImageUrl ? (
-              <a
-                href={heroImageUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
-              >
-                Open
-              </a>
-            ) : null}
+            <button
+              type="button"
+              disabled={!heroImageUrl || isPending || heroUploading}
+              onClick={() => {
+                if (!heroImageUrl) return;
+                window.open(heroImageUrl, "_blank", "noopener,noreferrer");
+              }}
+              className="px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              Open
+            </button>
+
+            <button
+              type="button"
+              disabled={!heroImageUrl || isPending || heroUploading}
+              onClick={() => {
+                setHeroUploadError(null);
+                setHeroImageUrl("");
+              }}
+              className="px-4 py-2 rounded-full border border-gray-200 bg-white text-red-600 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              Clear
+            </button>
 
             <label
               htmlFor="hero-image-upload"
@@ -274,29 +288,29 @@ export default function AdminProjectForm({
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 p-6">
+        <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 relative h-44 sm:h-52">
           {heroImageUrl ? (
-            <div className="grid grid-cols-1 gap-4">
-              <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-                <img
-                  src={heroImageUrl}
-                  alt="Hero image preview"
-                  className="w-full h-full aspect-video object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <p className="text-xs text-gray-600 Ovo break-all">
-                {truncateUrl(heroImageUrl)}
-              </p>
-            </div>
+            <Image
+              src={heroImageUrl}
+              alt="Hero image preview"
+              fill
+              sizes="(max-width: 1024px) 100vw, 960px"
+              className="object-contain bg-white"
+            />
           ) : (
-            <div className="text-center">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
               <p className="text-base text-gray-700 Ovo">No hero image yet</p>
               <p className="text-sm text-gray-600 Ovo mt-2">
                 Use the Browse button to upload.
               </p>
             </div>
           )}
+
+          {heroUploading ? (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center">
+              <p className="text-sm text-gray-700 Ovo">Uploading…</p>
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-3">
@@ -512,7 +526,7 @@ export default function AdminProjectForm({
                   </div>
 
                   <div className="mt-4 grid grid-cols-1 gap-4">
-                    <div className="rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 p-5">
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-gray-900 Ovo">
@@ -525,24 +539,49 @@ export default function AdminProjectForm({
                                 ? "Uploaded"
                                 : "No file uploaded yet"}
                           </p>
-                          {item.url ? (
-                            <p className="text-xs text-gray-600 Ovo break-all mt-2">
-                              {truncateUrl(item.url)}
-                            </p>
-                          ) : null}
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                          {item.url ? (
-                            <a
-                              href={item.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
-                            >
-                              Open
-                            </a>
-                          ) : null}
+                          <button
+                            type="button"
+                            disabled={
+                              !item.url ||
+                              isPending ||
+                              isUploading ||
+                              mediaIsUploading
+                            }
+                            onClick={() => {
+                              if (!item.url) return;
+                              window.open(item.url, "_blank", "noopener,noreferrer");
+                            }}
+                            className="px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            Open
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={
+                              !item.url ||
+                              isPending ||
+                              isUploading ||
+                              mediaIsUploading
+                            }
+                            onClick={() => {
+                              setMediaUploadErrors((prev) => ({
+                                ...prev,
+                                [mediaKey]: null,
+                              }));
+                              setMedia((items) =>
+                                items.map((x) =>
+                                  x.clientId === clientId ? { ...x, url: "" } : x,
+                                ),
+                              );
+                            }}
+                            className="px-4 py-2 rounded-full border border-gray-200 bg-white text-red-600 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            Clear
+                          </button>
 
                           <label
                             htmlFor={fileInputId}
@@ -584,8 +623,8 @@ export default function AdminProjectForm({
                                   resourceType: isVideo ? "video" : "image",
                                 });
                                 setMedia((items) =>
-                                  items.map((x, i) =>
-                                    i === index
+                                  items.map((x) =>
+                                    x.clientId === clientId
                                       ? { ...x, url: result.secureUrl }
                                       : x,
                                   ),
@@ -607,21 +646,43 @@ export default function AdminProjectForm({
                         </div>
                       </div>
 
+                      <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 aspect-video relative">
+                        {!isVideo && item.url ? (
+                          <Image
+                            src={item.url}
+                            alt={item.alt ? item.alt : "Uploaded image"}
+                            fill
+                            sizes="(max-width: 1024px) 100vw, 960px"
+                            className="object-contain bg-white"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                            <p className="text-base text-gray-700 Ovo">
+                              {isVideo
+                                ? item.url
+                                  ? "Video uploaded"
+                                  : "No video uploaded yet"
+                                : "No image uploaded yet"}
+                            </p>
+                            <p className="text-sm text-gray-600 Ovo mt-2">
+                              Use the Browse button to upload.
+                            </p>
+                          </div>
+                        )}
+
+                        {mediaIsUploading ? (
+                          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center">
+                            <p className="text-sm text-gray-700 Ovo">
+                              Uploading…
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+
                       {mediaUploadError ? (
                         <p className="text-xs text-red-600 Ovo mt-3">
                           {mediaUploadError}
                         </p>
-                      ) : null}
-
-                      {!isVideo && item.url ? (
-                        <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200 bg-white">
-                          <img
-                            src={item.url}
-                            alt={item.alt ? item.alt : "Uploaded image"}
-                            className="w-full h-full aspect-video object-cover"
-                            loading="lazy"
-                          />
-                        </div>
                       ) : null}
                     </div>
 
@@ -640,24 +701,55 @@ export default function AdminProjectForm({
                                     ? "Uploaded"
                                     : "No poster uploaded"}
                               </p>
-                              {item.poster_url ? (
-                                <p className="text-xs text-gray-600 Ovo break-all mt-2">
-                                  {truncateUrl(item.poster_url)}
-                                </p>
-                              ) : null}
                             </div>
 
                             <div className="flex flex-wrap gap-2">
-                              {item.poster_url ? (
-                                <a
-                                  href={item.poster_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
-                                >
-                                  Open
-                                </a>
-                              ) : null}
+                              <button
+                                type="button"
+                                disabled={
+                                  !item.poster_url ||
+                                  isPending ||
+                                  isUploading ||
+                                  posterIsUploading
+                                }
+                                onClick={() => {
+                                  if (!item.poster_url) return;
+                                  window.open(
+                                    item.poster_url,
+                                    "_blank",
+                                    "noopener,noreferrer",
+                                  );
+                                }}
+                                className="px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                              >
+                                Open
+                              </button>
+
+                              <button
+                                type="button"
+                                disabled={
+                                  !item.poster_url ||
+                                  isPending ||
+                                  isUploading ||
+                                  posterIsUploading
+                                }
+                                onClick={() => {
+                                  setMediaUploadErrors((prev) => ({
+                                    ...prev,
+                                    [posterKey]: null,
+                                  }));
+                                  setMedia((items) =>
+                                    items.map((x) =>
+                                      x.clientId === clientId
+                                        ? { ...x, poster_url: "" }
+                                        : x,
+                                    ),
+                                  );
+                                }}
+                                className="px-4 py-2 rounded-full border border-gray-200 bg-white text-red-600 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                              >
+                                Clear
+                              </button>
 
                               <label
                                 htmlFor={posterInputId}
@@ -699,8 +791,8 @@ export default function AdminProjectForm({
                                       resourceType: "image",
                                     });
                                     setMedia((items) =>
-                                      items.map((x, i) =>
-                                        i === index
+                                      items.map((x) =>
+                                        x.clientId === clientId
                                           ? {
                                               ...x,
                                               poster_url: result.secureUrl,
@@ -725,21 +817,39 @@ export default function AdminProjectForm({
                             </div>
                           </div>
 
+                          <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 aspect-video relative">
+                            {item.poster_url ? (
+                              <Image
+                                src={item.poster_url}
+                                alt="Poster image preview"
+                                fill
+                                sizes="(max-width: 1024px) 100vw, 960px"
+                                className="object-contain bg-white"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                                <p className="text-base text-gray-700 Ovo">
+                                  No poster uploaded
+                                </p>
+                                <p className="text-sm text-gray-600 Ovo mt-2">
+                                  Optional, but recommended for videos.
+                                </p>
+                              </div>
+                            )}
+
+                            {posterIsUploading ? (
+                              <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center">
+                                <p className="text-sm text-gray-700 Ovo">
+                                  Uploading…
+                                </p>
+                              </div>
+                            ) : null}
+                          </div>
+
                           {posterUploadError ? (
                             <p className="text-xs text-red-600 Ovo mt-3">
                               {posterUploadError}
                             </p>
-                          ) : null}
-
-                          {item.poster_url ? (
-                            <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200 bg-white">
-                              <img
-                                src={item.poster_url}
-                                alt="Poster image preview"
-                                className="w-full h-full aspect-video object-cover"
-                                loading="lazy"
-                              />
-                            </div>
                           ) : null}
                         </div>
                       </div>
