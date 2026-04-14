@@ -476,9 +476,7 @@ export default function AdminAboutForm({
                   <div className="min-w-0">
                     <p className="text-sm text-gray-600 Ovo">Current</p>
                     <p className="text-base font-medium text-gray-900 Ovo truncate">
-                      {heroImage?.url
-                        ? truncateMiddle(heroImage.url)
-                        : "Not set"}
+                      {heroImage?.id ? heroImage.alt || "Selected" : "Not set"}
                     </p>
                   </div>
                 </div>
@@ -542,8 +540,8 @@ export default function AdminAboutForm({
                   <div className="min-w-0">
                     <p className="text-sm text-gray-600 Ovo">Current</p>
                     <p className="text-base font-medium text-gray-900 Ovo truncate">
-                      {aboutImage?.url
-                        ? truncateMiddle(aboutImage.url)
+                      {aboutImage?.id
+                        ? aboutImage.alt || "Selected"
                         : "Not set"}
                     </p>
                   </div>
