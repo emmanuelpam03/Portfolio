@@ -100,6 +100,18 @@ function moveItem(list, fromIndex, toIndex) {
   return next;
 }
 
+function canPreviewWithNextImage(src) {
+  const value = String(src ?? "").trim();
+  if (!value) return false;
+  if (value.startsWith("/")) return true;
+  try {
+    const url = new URL(value);
+    return url.hostname === "res.cloudinary.com";
+  } catch {
+    return false;
+  }
+}
+
 export default function AdminProjectForm({
   action,
   submitLabel = "Save",
@@ -289,7 +301,7 @@ export default function AdminProjectForm({
         </div>
 
         <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 relative h-44 sm:h-52">
-          {heroImageUrl ? (
+          {heroImageUrl && canPreviewWithNextImage(heroImageUrl) ? (
             <Image
               src={heroImageUrl}
               alt="Hero image preview"
@@ -297,6 +309,13 @@ export default function AdminProjectForm({
               sizes="(max-width: 1024px) 100vw, 960px"
               className="object-contain bg-white"
             />
+          ) : heroImageUrl ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+              <p className="text-base text-gray-700 Ovo">Preview unavailable</p>
+              <p className="text-sm text-gray-600 Ovo mt-2">
+                This URL isn’t from Cloudinary. Use Open or Replace.
+              </p>
+            </div>
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
               <p className="text-base text-gray-700 Ovo">No hero image yet</p>
@@ -647,7 +666,7 @@ export default function AdminProjectForm({
                       </div>
 
                       <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 aspect-video relative">
-                        {!isVideo && item.url ? (
+                        {!isVideo && item.url && canPreviewWithNextImage(item.url) ? (
                           <Image
                             src={item.url}
                             alt={item.alt ? item.alt : "Uploaded image"}
@@ -655,6 +674,15 @@ export default function AdminProjectForm({
                             sizes="(max-width: 1024px) 100vw, 960px"
                             className="object-contain bg-white"
                           />
+                        ) : !isVideo && item.url ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                            <p className="text-base text-gray-700 Ovo">
+                              Image uploaded (preview unavailable)
+                            </p>
+                            <p className="text-sm text-gray-600 Ovo mt-2">
+                              This URL isn’t from Cloudinary.
+                            </p>
+                          </div>
                         ) : (
                           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
                             <p className="text-base text-gray-700 Ovo">
@@ -818,7 +846,7 @@ export default function AdminProjectForm({
                           </div>
 
                           <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 aspect-video relative">
-                            {item.poster_url ? (
+                            {item.poster_url && canPreviewWithNextImage(item.poster_url) ? (
                               <Image
                                 src={item.poster_url}
                                 alt="Poster image preview"
@@ -826,6 +854,15 @@ export default function AdminProjectForm({
                                 sizes="(max-width: 1024px) 100vw, 960px"
                                 className="object-contain bg-white"
                               />
+                            ) : item.poster_url ? (
+                              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                                <p className="text-base text-gray-700 Ovo">
+                                  Poster uploaded (preview unavailable)
+                                </p>
+                                <p className="text-sm text-gray-600 Ovo mt-2">
+                                  This URL isn’t from Cloudinary.
+                                </p>
+                              </div>
                             ) : (
                               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
                                 <p className="text-base text-gray-700 Ovo">

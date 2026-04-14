@@ -10,7 +10,15 @@ export const metadata = {
   title: "Admin Projects | Portfolio",
 };
 
-export default async function AdminProjectsPage() {
+export default async function AdminProjectsPage({ searchParams }) {
+  const created = String(searchParams?.created ?? "") === "1";
+  const updated = String(searchParams?.updated ?? "") === "1";
+  const bannerMessage = created
+    ? "Project created successfully."
+    : updated
+      ? "Project updated successfully."
+      : null;
+
   let projects = [];
   try {
     projects = (await getAllProjectsAdmin()) ?? [];
@@ -49,24 +57,43 @@ export default async function AdminProjectsPage() {
           </Link>
         </div>
 
+        {bannerMessage ? (
+          <div className="mt-6 rounded-2xl border border-gray-200 bg-gradient-to-r from-blue-50/60 to-purple-50/60 p-4">
+            <p className="text-sm text-gray-700 Ovo">{bannerMessage}</p>
+          </div>
+        ) : null}
+
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5">
           {projects.map((p) => (
             <div
               key={p.slug}
-              className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-lg p-6"
+              className="group relative overflow-hidden rounded-3xl border border-gray-200 shadow-lg"
             >
-              <p className="text-sm font-semibold text-gray-900 Ovo">
-                {p.title}
-              </p>
-              <p className="text-sm text-gray-600 Ovo mt-1">/{p.slug}</p>
-              <div className="mt-4 flex gap-2">
-                <Link
-                  href={`/admin/projects/${p.slug}`}
-                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-base font-medium"
-                >
-                  Edit
-                </Link>
-                <AdminProjectDeleteForm id={p.id} />
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-100/60 to-purple-100/60" />
+              {p.hero_image_url ? (
+                <div
+                  className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-105"
+                  style={{ backgroundImage: `url(${p.hero_image_url})` }}
+                />
+              ) : null}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
+              <div className="relative p-6 flex flex-col justify-end min-h-56">
+                <div>
+                  <p className="text-base font-semibold text-white Ovo drop-shadow-lg">
+                    {p.title}
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      href={`/admin/projects/${p.slug}`}
+                      className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-base font-medium"
+                    >
+                      Edit
+                    </Link>
+                    <AdminProjectDeleteForm id={p.id} />
+                  </div>
+                </div>
               </div>
             </div>
           ))}

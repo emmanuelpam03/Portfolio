@@ -44,7 +44,9 @@ function trimOrNull(value) {
 }
 
 function checkboxToBoolean(value) {
-  const normalized = String(value ?? "").trim().toLowerCase();
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
   return normalized === "on" || normalized === "true" || normalized === "1";
 }
 
@@ -222,8 +224,9 @@ export async function createProjectAction(_prevState, formData) {
         ${data.is_featured ?? false}
       )
     `,
-    ...data.media.map((item, index) =>
-      sql`
+    ...data.media.map(
+      (item, index) =>
+        sql`
         INSERT INTO project_media (
           project_id,
           type,
@@ -246,14 +249,24 @@ export async function createProjectAction(_prevState, formData) {
     ),
   ];
 
-  await sql.transaction(transactionQueries);
+  try {
+    await sql.transaction(transactionQueries);
+  } catch (error) {
+    console.error("Failed to create project", error);
+    return {
+      ok: false,
+      message: "Unable to create project. Please try again.",
+      errors: {},
+      fields: raw,
+    };
+  }
 
   revalidatePath("/");
   revalidatePath("/projects");
   revalidatePath(`/projects/${slug}`);
   revalidatePath("/admin/projects");
 
-  redirect(`/admin/projects/${slug}`);
+  redirect("/admin/projects?created=1");
 }
 
 export async function updateProjectAction(prevState, formData) {
@@ -307,8 +320,9 @@ export async function updateProjectAction(prevState, formData) {
       DELETE FROM project_media
       WHERE project_id = ${id}
     `,
-    ...data.media.map((item, index) =>
-      sql`
+    ...data.media.map(
+      (item, index) =>
+        sql`
         INSERT INTO project_media (
           project_id,
           type,
@@ -331,7 +345,18 @@ export async function updateProjectAction(prevState, formData) {
     ),
   ];
 
-  const results = await sql.transaction(transactionQueries);
+  let results;
+  try {
+    results = await sql.transaction(transactionQueries);
+  } catch (error) {
+    console.error("Failed to update project", error);
+    return {
+      ok: false,
+      message: "Unable to update project. Please try again.",
+      errors: {},
+      fields: raw,
+    };
+  }
   const updatedRows = results?.[0] ?? [];
   if (!updatedRows.length) {
     return {
@@ -350,12 +375,7 @@ export async function updateProjectAction(prevState, formData) {
   revalidatePath("/admin/projects");
   revalidatePath(`/admin/projects/${slug}`);
 
-  return {
-    ok: true,
-    message: "Saved.",
-    errors: {},
-    fields: raw,
-  };
+  redirect("/admin/projects?updated=1");
 }
 
 // Delete a project (cascades media)
