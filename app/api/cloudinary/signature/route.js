@@ -26,7 +26,7 @@ function signCloudinaryParams(params, apiSecret) {
   return sha1Hex(`${sorted}${apiSecret}`);
 }
 
-export async function POST() {
+export async function POST(request) {
   try {
     await requireAdmin({ redirectTo: null });
   } catch {
@@ -34,12 +34,28 @@ export async function POST() {
   }
 
   try {
+    let requestedFolder = null;
+    try {
+      const body = await request.json();
+      if (body && typeof body.folder === "string") {
+        requestedFolder = body.folder.trim();
+      }
+    } catch {
+      // ignore invalid or missing JSON
+    }
+
     const cloudName = requireEnv("CLOUDINARY_CLOUD_NAME");
     const apiKey = requireEnv("CLOUDINARY_API_KEY");
     const apiSecret = requireEnv("CLOUDINARY_API_SECRET");
 
     const timestamp = Math.floor(Date.now() / 1000);
-    const folder = "portfolio/projects";
+
+    const defaultFolder = "portfolio/projects";
+    const allowedFolders = new Set(["portfolio/projects", "portfolio/media"]);
+    const folder =
+      requestedFolder && allowedFolders.has(requestedFolder)
+        ? requestedFolder
+        : defaultFolder;
 
     const paramsToSign = { folder, timestamp };
     const signature = signCloudinaryParams(paramsToSign, apiSecret);

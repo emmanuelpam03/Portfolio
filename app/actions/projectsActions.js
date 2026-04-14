@@ -61,6 +61,80 @@ function normalizeMediaItem(item) {
   };
 }
 
+function isMissingMediaAssetsTable(error) {
+  const message = String(error instanceof Error ? error.message : error);
+  return message.includes('relation "media_assets" does not exist');
+}
+
+async function tryUpsertMediaAssetsForProject(data) {
+  const items = [];
+
+  const heroUrl = String(data?.hero_image_url ?? "").trim();
+  if (heroUrl) {
+    items.push({ type: "image", url: heroUrl, poster_url: null, alt: null, caption: null });
+  }
+
+  const media = Array.isArray(data?.media) ? data.media : [];
+  for (const item of media) {
+    const type = item?.type === "video" ? "video" : "image";
+    const url = String(item?.url ?? "").trim();
+    if (url) {
+      items.push({
+        type,
+        url,
+        poster_url: trimOrNull(item?.poster_url),
+        alt: trimOrNull(item?.alt),
+        caption: trimOrNull(item?.caption),
+      });
+    }
+
+    const posterUrl = trimOrNull(item?.poster_url);
+    if (posterUrl) {
+      items.push({ type: "image", url: posterUrl, poster_url: null, alt: null, caption: null });
+    }
+  }
+
+  if (!items.length) return;
+
+  const byUrl = new Map();
+  for (const item of items) {
+    if (!item.url) continue;
+    if (!byUrl.has(item.url)) byUrl.set(item.url, item);
+  }
+
+  const queries = Array.from(byUrl.values()).map(
+    (item) => sql`
+      INSERT INTO media_assets (
+        type,
+        url,
+        poster_url,
+        alt,
+        caption
+      )
+      VALUES (
+        ${item.type},
+        ${item.url},
+        ${item.poster_url ?? null},
+        ${item.alt ?? null},
+        ${item.caption ?? null}
+      )
+      ON CONFLICT (url) DO UPDATE
+      SET
+        type = EXCLUDED.type,
+        poster_url = COALESCE(EXCLUDED.poster_url, media_assets.poster_url),
+        alt = COALESCE(EXCLUDED.alt, media_assets.alt),
+        caption = COALESCE(EXCLUDED.caption, media_assets.caption)
+    `,
+  );
+
+  try {
+    await sql.transaction(queries);
+  } catch (error) {
+    if (isMissingMediaAssetsTable(error)) return;
+    console.warn("Unable to sync media library assets", error);
+  }
+}
+
 function parseProjectFormData(formData) {
   const rawMediaJson = String(formData.get("media_json") ?? "[]");
   let mediaParsed = [];
@@ -261,6 +335,9 @@ export async function createProjectAction(_prevState, formData) {
     };
   }
 
+  // Best-effort: keep centralized media library in sync.
+  await tryUpsertMediaAssetsForProject(data);
+
   revalidatePath("/");
   revalidatePath("/projects");
   revalidatePath(`/projects/${slug}`);
@@ -368,6 +445,9 @@ export async function updateProjectAction(prevState, formData) {
   }
 
   const slug = updatedRows[0].slug;
+
+  // Best-effort: keep centralized media library in sync.
+  await tryUpsertMediaAssetsForProject(data);
 
   revalidatePath("/");
   revalidatePath("/projects");

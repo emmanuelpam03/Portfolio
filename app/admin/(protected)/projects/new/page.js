@@ -6,10 +6,13 @@ import { Plus } from "lucide-react";
 
 import { requireAdmin } from "@/app/lib/adminSession";
 import { createProjectAction } from "@/app/actions/projectsActions";
+import { getMediaAssetsAdmin } from "@/app/actions/mediaActions";
 import AdminProjectForm from "../AdminProjectForm";
 
 export default async function AdminNewProjectPage() {
   await requireAdmin();
+
+  const { assets: mediaLibrary } = await getMediaAssetsAdmin({ limit: 120 });
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -33,6 +36,7 @@ export default async function AdminNewProjectPage() {
           submitLabel="Create project"
           initialProject={null}
           initialMedia={[]}
+          mediaLibrary={mediaLibrary}
         />
       </div>
     </div>

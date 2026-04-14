@@ -117,6 +117,7 @@ export default function AdminProjectForm({
   submitLabel = "Save",
   initialProject,
   initialMedia,
+  mediaLibrary = [],
 }) {
   const initialFields = useMemo(
     () => ({
@@ -146,6 +147,38 @@ export default function AdminProjectForm({
   );
   const [heroUploading, setHeroUploading] = useState(false);
   const [heroUploadError, setHeroUploadError] = useState(null);
+
+  const [openLibraryPicker, setOpenLibraryPicker] = useState(null);
+
+  const libraryAssets = useMemo(
+    () => (Array.isArray(mediaLibrary) ? mediaLibrary : []),
+    [mediaLibrary],
+  );
+
+  const libraryImages = useMemo(
+    () =>
+      libraryAssets
+        .filter((asset) => asset && asset.type !== "video")
+        .map((asset) => ({
+          id: asset?.id ? String(asset.id) : String(asset?.url ?? ""),
+          url: String(asset?.url ?? ""),
+          alt: asset?.alt ? String(asset.alt) : "",
+        }))
+        .filter((asset) => asset.url.length),
+    [libraryAssets],
+  );
+
+  const libraryVideos = useMemo(
+    () =>
+      libraryAssets
+        .filter((asset) => asset && asset.type === "video")
+        .map((asset) => ({
+          id: asset?.id ? String(asset.id) : String(asset?.url ?? ""),
+          url: String(asset?.url ?? ""),
+        }))
+        .filter((asset) => asset.url.length),
+    [libraryAssets],
+  );
 
   const [media, setMedia] = useState(() => normalizeInitialMedia(initialMedia));
   const [mediaUploading, setMediaUploading] = useState(() => ({}));
@@ -254,6 +287,24 @@ export default function AdminProjectForm({
               Clear
             </button>
 
+            <button
+              type="button"
+              disabled={
+                isPending ||
+                heroUploading ||
+                libraryImages.length === 0 ||
+                isUploading
+              }
+              onClick={() =>
+                setOpenLibraryPicker((value) =>
+                  value === "hero" ? null : "hero",
+                )
+              }
+              className="px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              Choose from library
+            </button>
+
             <label
               htmlFor="hero-image-upload"
               aria-disabled={isPending || heroUploading}
@@ -299,6 +350,66 @@ export default function AdminProjectForm({
             />
           </div>
         </div>
+
+        {openLibraryPicker === "hero" ? (
+          <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-gray-900 Ovo">
+                Choose a hero image
+              </p>
+              <button
+                type="button"
+                onClick={() => setOpenLibraryPicker(null)}
+                className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium"
+              >
+                Close
+              </button>
+            </div>
+
+            {libraryImages.length ? (
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-72 overflow-y-auto">
+                {libraryImages.slice(0, 24).map((asset) => (
+                  <button
+                    key={asset.id}
+                    type="button"
+                    onClick={() => {
+                      setHeroUploadError(null);
+                      setHeroImageUrl(asset.url);
+                      setOpenLibraryPicker(null);
+                    }}
+                    className="text-left rounded-2xl border border-gray-200 bg-white overflow-hidden hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                    title={asset.url}
+                  >
+                    <div className="relative aspect-video bg-gradient-to-r from-blue-50/40 to-purple-50/40">
+                      {canPreviewWithNextImage(asset.url) ? (
+                        <Image
+                          src={asset.url}
+                          alt={asset.alt ? asset.alt : "Media image"}
+                          fill
+                          sizes="(max-width: 1024px) 50vw, 240px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center p-4">
+                          <p className="text-sm text-gray-700 Ovo">Image</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <p className="text-xs text-gray-600 Ovo">
+                        {truncateUrl(asset.url, 48)}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-600 Ovo mt-3">
+                No images in the media library yet.
+              </p>
+            )}
+          </div>
+        ) : null}
 
         <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 relative h-44 sm:h-52">
           {heroImageUrl && canPreviewWithNextImage(heroImageUrl) ? (
@@ -479,10 +590,13 @@ export default function AdminProjectForm({
               const posterKey = `poster-${clientId}`;
               const fileInputId = `media-${clientId}-file`;
               const posterInputId = `media-${clientId}-poster`;
+              const pickerKey = `picker-${clientId}`;
+              const pickerPosterKey = `picker-poster-${clientId}`;
               const mediaIsUploading = Boolean(mediaUploading[mediaKey]);
               const posterIsUploading = Boolean(mediaUploading[posterKey]);
               const mediaUploadError = mediaUploadErrors[mediaKey] ?? null;
               const posterUploadError = mediaUploadErrors[posterKey] ?? null;
+              const availableAssets = isVideo ? libraryVideos : libraryImages;
               return (
                 <div
                   key={clientId}
@@ -602,6 +716,24 @@ export default function AdminProjectForm({
                             Clear
                           </button>
 
+                          <button
+                            type="button"
+                            disabled={
+                              isPending ||
+                              isUploading ||
+                              mediaIsUploading ||
+                              availableAssets.length === 0
+                            }
+                            onClick={() =>
+                              setOpenLibraryPicker((value) =>
+                                value === pickerKey ? null : pickerKey,
+                              )
+                            }
+                            className="px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            Choose from library
+                          </button>
+
                           <label
                             htmlFor={fileInputId}
                             aria-disabled={isPending || isUploading || mediaIsUploading}
@@ -712,6 +844,59 @@ export default function AdminProjectForm({
                           {mediaUploadError}
                         </p>
                       ) : null}
+
+                      {openLibraryPicker === pickerKey ? (
+                        <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold text-gray-900 Ovo">
+                              Choose a {isVideo ? "video" : "image"}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setOpenLibraryPicker(null)}
+                              className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium"
+                            >
+                              Close
+                            </button>
+                          </div>
+
+                          {availableAssets.length ? (
+                            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                              {availableAssets.slice(0, 30).map((asset) => (
+                                <button
+                                  key={asset.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setMediaUploadErrors((prev) => ({
+                                      ...prev,
+                                      [mediaKey]: null,
+                                    }));
+                                    setMedia((items) =>
+                                      items.map((x) =>
+                                        x.clientId === clientId
+                                          ? { ...x, url: asset.url }
+                                          : x,
+                                      ),
+                                    );
+                                    setOpenLibraryPicker(null);
+                                  }}
+                                  className="text-left px-4 py-3 rounded-2xl border border-gray-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                                  title={asset.url}
+                                >
+                                  <p className="text-sm text-gray-800 Ovo">
+                                    {truncateUrl(asset.url, 68)}
+                                  </p>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-600 Ovo mt-3">
+                              No {isVideo ? "videos" : "images"} in the media library
+                              yet.
+                            </p>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
 
                     {isVideo ? (
@@ -777,6 +962,26 @@ export default function AdminProjectForm({
                                 className="px-4 py-2 rounded-full border border-gray-200 bg-white text-red-600 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
                               >
                                 Clear
+                              </button>
+
+                              <button
+                                type="button"
+                                disabled={
+                                  isPending ||
+                                  isUploading ||
+                                  posterIsUploading ||
+                                  libraryImages.length === 0
+                                }
+                                onClick={() =>
+                                  setOpenLibraryPicker((value) =>
+                                    value === pickerPosterKey
+                                      ? null
+                                      : pickerPosterKey,
+                                  )
+                                }
+                                className="px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                              >
+                                Choose from library
                               </button>
 
                               <label
@@ -887,6 +1092,58 @@ export default function AdminProjectForm({
                             <p className="text-xs text-red-600 Ovo mt-3">
                               {posterUploadError}
                             </p>
+                          ) : null}
+
+                          {openLibraryPicker === pickerPosterKey ? (
+                            <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="text-sm font-semibold text-gray-900 Ovo">
+                                  Choose a poster image
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenLibraryPicker(null)}
+                                  className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium"
+                                >
+                                  Close
+                                </button>
+                              </div>
+
+                              {libraryImages.length ? (
+                                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                                  {libraryImages.slice(0, 30).map((asset) => (
+                                    <button
+                                      key={asset.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setMediaUploadErrors((prev) => ({
+                                          ...prev,
+                                          [posterKey]: null,
+                                        }));
+                                        setMedia((items) =>
+                                          items.map((x) =>
+                                            x.clientId === clientId
+                                              ? { ...x, poster_url: asset.url }
+                                              : x,
+                                          ),
+                                        );
+                                        setOpenLibraryPicker(null);
+                                      }}
+                                      className="text-left px-4 py-3 rounded-2xl border border-gray-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                                      title={asset.url}
+                                    >
+                                      <p className="text-sm text-gray-800 Ovo">
+                                        {truncateUrl(asset.url, 68)}
+                                      </p>
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-600 Ovo mt-3">
+                                  No images in the media library yet.
+                                </p>
+                              )}
+                            </div>
                           ) : null}
                         </div>
                       </div>

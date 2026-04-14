@@ -7,6 +7,8 @@ import {
   updateProjectAction,
 } from "@/app/actions/projectsActions";
 
+import { getMediaAssetsAdmin } from "@/app/actions/mediaActions";
+
 import AdminProjectForm from "../AdminProjectForm";
 
 export const metadata = {
@@ -18,6 +20,8 @@ export default async function AdminEditProjectPage({ params }) {
   if (!slug) notFound();
 
   const project = await getProjectBySlugAdmin(slug);
+
+  const { assets: mediaLibrary } = await getMediaAssetsAdmin({ limit: 120 });
 
   if (!project) {
     notFound();
@@ -55,6 +59,7 @@ export default async function AdminEditProjectPage({ params }) {
             submitLabel="Save changes"
             initialProject={project}
             initialMedia={project.media}
+            mediaLibrary={mediaLibrary}
           />
         </div>
       </div>

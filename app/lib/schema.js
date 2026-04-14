@@ -47,3 +47,13 @@ export const projectSchema = z.object({
 export const projectWithMediaSchema = projectSchema.extend({
   media: z.array(projectMediaSchema).default([]),
 });
+
+// Media Library Schema (centralized media assets)
+
+export const mediaAssetSchema = z.object({
+  type: z.enum(["image", "video"]),
+  url: z.string().url("Enter a valid media URL"),
+  poster_url: z.string().url("Enter a valid poster URL").optional().nullable(),
+  alt: z.string().trim().max(200).optional().nullable(),
+  caption: z.string().trim().max(500).optional().nullable(),
+});
