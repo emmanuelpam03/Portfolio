@@ -3,6 +3,7 @@
 import { assets, infoList, toolsData } from "@/assets/assets";
 import Image from "next/image";
 import React from "react";
+import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { Wrench } from "lucide-react";
 
@@ -10,6 +11,8 @@ const fallbackAboutText =
   "I am an experienced Front-End Developer with a strong passion for creating visually appealing and user-friendly websites. I specialize in building responsive web applications that deliver seamless user experiences across various devices. I am proficient in modern frameworks such as React and Next.js.";
 
 const About = ({ about = null }) => {
+  const [toolTooltip, setToolTooltip] = React.useState(null);
+
   const aboutText =
     about && typeof about?.about_text === "string" && about.about_text.trim()
       ? about.about_text
@@ -92,6 +95,22 @@ const About = ({ about = null }) => {
           src: tool,
           alt: "Tool",
         }));
+
+  function showToolTooltip(element, label) {
+    if (!element) return;
+    if (!label || typeof label !== "string") return;
+
+    const rect = element.getBoundingClientRect();
+    setToolTooltip({
+      label,
+      x: rect.left + rect.width / 2,
+      y: rect.bottom + 8,
+    });
+  }
+
+  function hideToolTooltip() {
+    setToolTooltip(null);
+  }
 
   return (
     <motion.div
@@ -250,9 +269,17 @@ const About = ({ about = null }) => {
                   <motion.div
                     whileHover={{ scale: 1.15, rotate: 5 }}
                     className="relative w-14 h-14 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 shadow-md hover:shadow-xl flex items-center justify-center cursor-pointer transition-all duration-300 overflow-hidden"
+                    tabIndex={0}
+                    aria-label={tool.alt}
+                    onMouseEnter={(e) =>
+                      showToolTooltip(e.currentTarget, tool.alt)
+                    }
+                    onMouseLeave={hideToolTooltip}
+                    onFocus={(e) => showToolTooltip(e.currentTarget, tool.alt)}
+                    onBlur={hideToolTooltip}
                   >
                     {/* Hover background */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300" />
 
                     <Image
                       src={tool.src}
@@ -262,15 +289,27 @@ const About = ({ about = null }) => {
                       className="relative z-10 w-7 h-7 object-contain"
                     />
                   </motion.div>
-
-                  <div className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-20">
-                    <div className="px-3 py-1.5 rounded-full border border-gray-200 bg-white/90 backdrop-blur-sm text-xs text-gray-700 font-semibold shadow-md Ovo max-w-[180px] truncate">
-                      {tool.alt}
-                    </div>
-                  </div>
                 </motion.div>
               ))}
             </motion.div>
+
+            {typeof document !== "undefined" &&
+              toolTooltip &&
+              createPortal(
+                <div
+                  className="pointer-events-none fixed z-50"
+                  style={{
+                    left: `${toolTooltip.x}px`,
+                    top: `${toolTooltip.y}px`,
+                    transform: "translateX(-50%)",
+                  }}
+                >
+                  <div className="px-3 py-1.5 rounded-full border border-gray-200 bg-white/90 backdrop-blur-sm text-xs text-gray-700 font-semibold shadow-md Ovo max-w-[180px] truncate">
+                    {toolTooltip.label}
+                  </div>
+                </div>,
+                document.body,
+              )}
           </div>
         </motion.div>
       </motion.div>

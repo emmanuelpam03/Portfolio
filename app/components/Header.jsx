@@ -3,10 +3,13 @@
 import { assets } from "@/assets/assets";
 import Image from "next/image";
 import React from "react";
+import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { ArrowRight, Briefcase, Download, Hand, MapPin } from "lucide-react";
 
 const Header = ({ heroImage = null, heroLanguages = [] }) => {
+  const [languageTooltip, setLanguageTooltip] = React.useState(null);
+
   const heroSrc =
     heroImage && typeof heroImage?.url === "string" && heroImage.url
       ? heroImage.url
@@ -33,6 +36,22 @@ const Header = ({ heroImage = null, heroLanguages = [] }) => {
           : `Language ${index + 1}`,
     }))
     .filter((item) => typeof item.src === "string" && item.src);
+
+  function showLanguageTooltip(element, label) {
+    if (!element) return;
+    if (!label || typeof label !== "string") return;
+
+    const rect = element.getBoundingClientRect();
+    setLanguageTooltip({
+      label,
+      x: rect.left + rect.width / 2,
+      y: rect.bottom + 8,
+    });
+  }
+
+  function hideLanguageTooltip() {
+    setLanguageTooltip(null);
+  }
 
   return (
     <div className="relative w-full min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -154,6 +173,10 @@ const Header = ({ heroImage = null, heroLanguages = [] }) => {
                     <motion.div
                       whileHover={{ scale: 1.15, rotate: 5 }}
                       className="relative w-12 h-12 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 shadow-md hover:shadow-xl flex items-center justify-center cursor-pointer transition-all duration-300 overflow-hidden"
+                      onMouseEnter={(e) =>
+                        showLanguageTooltip(e.currentTarget, item.alt)
+                      }
+                      onMouseLeave={hideLanguageTooltip}
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <Image
@@ -164,12 +187,6 @@ const Header = ({ heroImage = null, heroLanguages = [] }) => {
                         className="relative z-10 w-6 h-6 object-contain"
                       />
                     </motion.div>
-
-                    <div className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-20">
-                      <div className="px-3 py-1.5 rounded-full border border-gray-200 bg-white/90 backdrop-blur-sm text-xs text-gray-700 font-semibold shadow-md Ovo max-w-[180px] truncate">
-                        {item.alt}
-                      </div>
-                    </div>
                   </motion.div>
                 ))
               : ["React", "Next.js", "TypeScript", "Tailwind"].map((tech) => (
@@ -227,6 +244,24 @@ const Header = ({ heroImage = null, heroLanguages = [] }) => {
           </motion.div>
         </motion.div>
       </div>
+
+      {typeof document !== "undefined" &&
+        languageTooltip &&
+        createPortal(
+          <div
+            className="pointer-events-none fixed z-50"
+            style={{
+              left: `${languageTooltip.x}px`,
+              top: `${languageTooltip.y}px`,
+              transform: "translateX(-50%)",
+            }}
+          >
+            <div className="px-3 py-1.5 rounded-full border border-gray-200 bg-white/90 backdrop-blur-sm text-xs text-gray-700 font-semibold shadow-md Ovo max-w-[180px] truncate">
+              {languageTooltip.label}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
