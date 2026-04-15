@@ -1,11 +1,35 @@
-import { serviceData } from "@/assets/assets";
+import { unstable_rethrow } from "next/navigation";
 import { Puzzle } from "lucide-react";
+
+import { requireAdmin } from "@/app/lib/adminSession";
+import { getServicesAdmin } from "@/app/actions/servicesActions";
+
+import AdminServicesForm from "./AdminServicesForm";
 
 export const metadata = {
   title: "Admin Services | Portfolio",
 };
 
-export default function AdminServicesPage() {
+export default async function AdminServicesPage() {
+  await requireAdmin();
+
+  let servicesResult = { ok: false, content: null, services: [], message: null };
+
+  try {
+    servicesResult = (await getServicesAdmin()) ?? servicesResult;
+  } catch (error) {
+    unstable_rethrow(error);
+    console.error("Failed to load admin services", error);
+    servicesResult = {
+      ok: false,
+      content: null,
+      services: [],
+      message: "Unable to load Services.",
+    };
+  }
+
+  const setupMessage = servicesResult?.message || null;
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-2xl p-7 sm:p-10">
@@ -20,47 +44,14 @@ export default function AdminServicesPage() {
           Services
         </h2>
         <p className="text-gray-600 Ovo mb-8 max-w-2xl">
-          Manage your services list (design-only).
+          Edit the Services section copy, CTA, and list items.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {serviceData.map((s) => (
-            <div
-              key={s.title}
-              className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-lg p-6"
-            >
-              <p className="text-sm font-semibold text-gray-900 Ovo">
-                {s.title}
-              </p>
-              <p className="text-base text-gray-700 Ovo mt-2">
-                {s.description}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-base font-medium"
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-red-600 text-base font-medium"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-8 flex justify-end">
-          <button
-            type="button"
-            className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-base"
-          >
-            Save (coming soon)
-          </button>
-        </div>
+        <AdminServicesForm
+          initialContent={servicesResult?.content ?? null}
+          initialServices={servicesResult?.services ?? []}
+          setupMessage={setupMessage}
+        />
       </div>
     </div>
   );

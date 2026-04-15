@@ -140,3 +140,45 @@ export const settingsUpdateSchema = z.object({
 
   cv_url: relativeOrHttpUrlSchema.optional().nullable(),
 });
+
+// Services Schemas
+
+const hrefOrAnchorSchema = z
+  .string()
+  .trim()
+  .max(2048)
+  .refine(
+    (value) =>
+      (value.startsWith("#") && value.length > 1) ||
+      (value.startsWith("/") && !value.startsWith("//")) ||
+      isHttpUrl(value),
+    "Enter a valid URL (https://...), a path like /services, or an anchor like #contact",
+  );
+
+export const serviceItemSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(200),
+  description: z.string().trim().min(1, "Description is required").max(1000),
+  icon_key: z.enum(["globe", "smartphone", "layout", "brush"]),
+  link_url: hrefOrAnchorSchema.optional().nullable(),
+  is_active: z.boolean(),
+});
+
+export const servicesUpdateSchema = z.object({
+  is_enabled: z.boolean(),
+
+  kicker_text: z.string().trim().min(1, "Kicker text is required").max(80),
+  heading_text: z.string().trim().min(1, "Heading is required").max(160),
+  intro_text: z.string().trim().min(1, "Intro text is required").max(2000),
+
+  show_cta: z.boolean(),
+  cta_title: z.string().trim().min(1, "CTA title is required").max(160),
+  cta_body: z.string().trim().min(1, "CTA body is required").max(2000),
+  cta_button_text: z
+    .string()
+    .trim()
+    .min(1, "CTA button text is required")
+    .max(80),
+  cta_button_href: hrefOrAnchorSchema,
+
+  services: z.array(serviceItemSchema).default([]),
+});
