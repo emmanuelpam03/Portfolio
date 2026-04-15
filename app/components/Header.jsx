@@ -5,7 +5,14 @@ import Image from "next/image";
 import React from "react";
 import { createPortal } from "react-dom";
 import { motion } from "motion/react";
-import { ArrowRight, Briefcase, Download, Hand, MapPin } from "lucide-react";
+import {
+  ArrowRight,
+  Briefcase,
+  Download,
+  Eye,
+  Hand,
+  MapPin,
+} from "lucide-react";
 
 const FALLBACK_SETTINGS = {
   display_name: "Emmanuel Pam",
@@ -16,8 +23,23 @@ const FALLBACK_SETTINGS = {
   cv_url: "/sample-resume.pdf",
 };
 
+function isCloudinaryUrl(urlString) {
+  try {
+    const url = new URL(urlString);
+    const hostname = url.hostname.toLowerCase();
+    return (
+      hostname === "res.cloudinary.com" || hostname.endsWith(".cloudinary.com")
+    );
+  } catch {
+    return false;
+  }
+}
+
 const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
   const [languageTooltip, setLanguageTooltip] = React.useState(null);
+  const [cvViewerOpen, setCvViewerOpen] = React.useState(false);
+  const [cvViewerIsOpen, setCvViewerIsOpen] = React.useState(false);
+  const closeCvViewerTimeoutRef = React.useRef(null);
 
   const hasSettings = Boolean(settings && typeof settings === "object");
 
@@ -55,8 +77,12 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
       : ""
     : FALLBACK_SETTINGS.cv_url;
 
-  const shouldUseApiCvDownload = hasSettings && Boolean(cvHref);
-  const cvDownloadHref = shouldUseApiCvDownload ? "/api/cv" : cvHref;
+  const shouldProxyCv = Boolean(cvHref && isCloudinaryUrl(cvHref));
+  const cvViewSrc = shouldProxyCv ? "/api/cv?mode=view" : cvHref;
+  const cvDownloadHref = shouldProxyCv ? "/api/cv?mode=download" : cvHref;
+  const canUseDownloadAttribute = Boolean(
+    cvDownloadHref.startsWith("/") && !cvDownloadHref.startsWith("/api/cv"),
+  );
 
   const headlineParts = headlineText.split(/\s+/).filter(Boolean);
   const headlinePrimary = headlineParts[0] ?? "";
@@ -104,6 +130,68 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
   function hideLanguageTooltip() {
     setLanguageTooltip(null);
   }
+
+  React.useEffect(() => {
+    return () => {
+      if (closeCvViewerTimeoutRef.current) {
+        clearTimeout(closeCvViewerTimeoutRef.current);
+        closeCvViewerTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!cvViewerOpen) {
+      setCvViewerIsOpen(false);
+      return;
+    }
+
+    const raf = requestAnimationFrame(() => {
+      setCvViewerIsOpen(true);
+    });
+
+    return () => {
+      cancelAnimationFrame(raf);
+    };
+  }, [cvViewerOpen]);
+
+  function openCvViewer() {
+    if (closeCvViewerTimeoutRef.current) {
+      clearTimeout(closeCvViewerTimeoutRef.current);
+      closeCvViewerTimeoutRef.current = null;
+    }
+
+    setCvViewerIsOpen(false);
+    setCvViewerOpen(true);
+  }
+
+  function requestCloseCvViewer() {
+    setCvViewerIsOpen(false);
+
+    if (closeCvViewerTimeoutRef.current) {
+      clearTimeout(closeCvViewerTimeoutRef.current);
+    }
+
+    closeCvViewerTimeoutRef.current = setTimeout(() => {
+      closeCvViewerTimeoutRef.current = null;
+      setCvViewerOpen(false);
+    }, 300);
+  }
+
+  React.useEffect(() => {
+    if (!cvViewerOpen) return;
+
+    function onKeyDown(event) {
+      if (event.key === "Escape") {
+        requestCloseCvViewer();
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [cvViewerOpen]);
 
   return (
     <div className="relative w-full min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -198,16 +286,37 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
             </motion.a>
 
             {cvHref ? (
-              <motion.a
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                href={cvDownloadHref}
-                download={Boolean(!shouldUseApiCvDownload && cvDownloadHref)}
-                className="px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 flex items-center gap-2 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-base"
-              >
-                <Download className="w-4 h-4" aria-hidden="true" />
-                <span>Download CV</span>
-              </motion.a>
+              <>
+                <motion.button
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  type="button"
+                  onClick={() => {
+                    if (cvViewerOpen) {
+                      requestCloseCvViewer();
+                      return;
+                    }
+
+                    openCvViewer();
+                  }}
+                  className="px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 flex items-center gap-2 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-base"
+                  aria-expanded={cvViewerOpen}
+                >
+                  <Eye className="w-4 h-4" aria-hidden="true" />
+                  <span>{cvViewerOpen ? "Hide CV" : "View CV"}</span>
+                </motion.button>
+
+                <motion.a
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  href={cvDownloadHref}
+                  download={canUseDownloadAttribute}
+                  className="px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 flex items-center gap-2 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-base"
+                >
+                  <Download className="w-4 h-4" aria-hidden="true" />
+                  <span>Download CV</span>
+                </motion.a>
+              </>
             ) : null}
           </motion.div>
 
@@ -309,6 +418,46 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
             <div className="px-3 py-1.5 rounded-full border border-gray-200 bg-white/90 backdrop-blur-sm text-xs text-gray-700 font-semibold shadow-md Ovo max-w-[180px] truncate">
               {languageTooltip.label}
             </div>
+          </div>,
+          document.body,
+        )}
+
+      {typeof document !== "undefined" &&
+        cvHref &&
+        cvViewSrc &&
+        cvViewerOpen &&
+        createPortal(
+          <div
+            className={`fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 transition-opacity duration-300 ease-out ${
+              cvViewerIsOpen ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={requestCloseCvViewer}
+          >
+            <div
+              className={`transform transition-all duration-300 ease-out ${
+                cvViewerIsOpen ? "opacity-100 scale-100" : "opacity-0 scale-95"
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <iframe
+                title="CV"
+                src={cvViewSrc}
+                className="max-w-[90vw] max-h-[90vh] w-[90vw] h-[90vh] bg-white rounded-2xl"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                requestCloseCvViewer();
+              }}
+              className="absolute top-6 right-6 text-white text-2xl cursor-pointer"
+              aria-label="Close preview"
+              title="Close (ESC)"
+            >
+              ✕
+            </button>
           </div>,
           document.body,
         )}
