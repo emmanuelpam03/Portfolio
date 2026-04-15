@@ -8,6 +8,8 @@ import { Readable } from "node:stream";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const DEFAULT_CV_BASENAME = "Emmanuel_Pam_CV";
+
 function isMissingSettingsTable(error) {
   const message = String(error instanceof Error ? error.message : error);
   return message.includes('relation "site_settings" does not exist');
@@ -25,19 +27,28 @@ function isAllowedExternalCvHost(url) {
   return host === "res.cloudinary.com" || host.endsWith(".cloudinary.com");
 }
 
-function filenameFromUrlPath(urlPathname) {
-  const trimmed = String(urlPathname ?? "").trim();
-  const lastSegment = trimmed.split("/").filter(Boolean).at(-1) ?? "";
-  const decoded = (() => {
-    try {
-      return decodeURIComponent(lastSegment);
-    } catch {
-      return lastSegment;
-    }
-  })();
+function extensionFromContentType(contentType) {
+  const value = String(contentType ?? "").toLowerCase();
+  if (!value) return "";
+  if (value.includes("application/pdf")) return ".pdf";
+  if (value.includes("application/msword")) return ".doc";
+  if (
+    value.includes(
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+  ) {
+    return ".docx";
+  }
+  return "";
+}
 
-  const safe = decoded.replace(/["\r\n]/g, "").trim();
-  return safe || "cv";
+function defaultCvFilename({ contentType, fallbackPathname } = {}) {
+  const extFromType = extensionFromContentType(contentType);
+  const extFromPath = String(fallbackPathname ?? "")
+    ? path.extname(String(fallbackPathname)).toLowerCase()
+    : "";
+  const ext = extFromType || extFromPath || "";
+  return `${DEFAULT_CV_BASENAME}${ext}`;
 }
 
 function contentTypeFromPath(filePath) {
@@ -122,7 +133,10 @@ export async function GET(request) {
     }
 
     const contentType = contentTypeFromPath(filePath);
-    const filename = path.basename(filePath);
+    const filename = defaultCvFilename({
+      contentType,
+      fallbackPathname: filePath,
+    });
 
     const headers = new Headers();
     headers.set("Content-Type", contentType);
@@ -188,7 +202,10 @@ export async function GET(request) {
       ? upstreamType
       : guessedType;
 
-  const filename = filenameFromUrlPath(upstreamUrl.pathname);
+  const filename = defaultCvFilename({
+    contentType,
+    fallbackPathname: upstreamUrl.pathname,
+  });
 
   headers.set("Content-Type", contentType);
 

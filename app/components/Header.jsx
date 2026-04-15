@@ -23,6 +23,8 @@ const FALLBACK_SETTINGS = {
   cv_url: "/sample-resume.pdf",
 };
 
+const DEFAULT_CV_DOWNLOAD_BASENAME = "Emmanuel_Pam_CV";
+
 function isCloudinaryUrl(urlString) {
   try {
     const url = new URL(urlString);
@@ -33,6 +35,21 @@ function isCloudinaryUrl(urlString) {
   } catch {
     return false;
   }
+}
+
+function cvDownloadFilenameFromHref(href) {
+  const base = DEFAULT_CV_DOWNLOAD_BASENAME;
+  if (!href || typeof href !== "string") return base;
+
+  const pathname = href.split("?")[0].split("#")[0];
+  const match = pathname.match(/(\.[a-zA-Z0-9]+)$/);
+  const ext = match ? match[1].toLowerCase() : "";
+
+  if (ext === ".pdf" || ext === ".doc" || ext === ".docx") {
+    return `${base}${ext}`;
+  }
+
+  return base;
 }
 
 const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
@@ -77,12 +94,21 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
       : ""
     : FALLBACK_SETTINGS.cv_url;
 
-  const shouldProxyCv = Boolean(cvHref && isCloudinaryUrl(cvHref));
-  const cvViewSrc = shouldProxyCv ? "/api/cv?mode=view" : cvHref;
-  const cvDownloadHref = shouldProxyCv ? "/api/cv?mode=download" : cvHref;
+  const isCloudinaryCv = Boolean(cvHref && isCloudinaryUrl(cvHref));
+  const isLocalCv = Boolean(cvHref && cvHref.startsWith("/"));
+  const shouldUseCvApi = Boolean(hasSettings && (isCloudinaryCv || isLocalCv));
+
+  const cvViewSrc = isCloudinaryCv ? "/api/cv?mode=view" : cvHref;
+  const cvDownloadHref = shouldUseCvApi ? "/api/cv?mode=download" : cvHref;
+
   const canUseDownloadAttribute = Boolean(
     cvDownloadHref.startsWith("/") && !cvDownloadHref.startsWith("/api/cv"),
   );
+
+  const cvDownloadFilename = cvDownloadFilenameFromHref(cvDownloadHref);
+  const cvDownloadAttrValue = canUseDownloadAttribute
+    ? cvDownloadFilename
+    : undefined;
 
   const headlineParts = headlineText.split(/\s+/).filter(Boolean);
   const headlinePrimary = headlineParts[0] ?? "";
@@ -310,7 +336,7 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                   href={cvDownloadHref}
-                  download={canUseDownloadAttribute}
+                  download={cvDownloadAttrValue}
                   className="px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 flex items-center gap-2 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-base"
                 >
                   <Download className="w-4 h-4" aria-hidden="true" />

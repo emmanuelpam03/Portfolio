@@ -128,7 +128,7 @@ export const settingsUpdateSchema = z.object({
   linkedin_url: z
     .string()
     .trim()
-    .url("Enter a valid LinkedIn URL")
+    .url("Enter a valid LinkedIn URL e.g. https://linkedin.com/in/yourprofile")
     .refine(
       (value) =>
         value.startsWith("https://www.linkedin.com/") ||
