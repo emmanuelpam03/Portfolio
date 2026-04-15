@@ -84,3 +84,66 @@ export const aboutUpdateSchema = z.object({
   tools: z.array(aboutToolSchema).default([]),
   hero_languages: z.array(aboutToolSchema).default([]),
 });
+
+// Settings Schemas
+
+function isHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+const relativeOrHttpUrlSchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) =>
+      (value.startsWith("/") && !value.startsWith("//")) || isHttpUrl(value),
+    "Enter a valid URL (https://...) or a path like /resume.pdf",
+  );
+
+const techTagSchema = z
+  .string()
+  .trim()
+  .min(1, "Tag cannot be empty")
+  .max(40, "Tag must not exceed 40 characters");
+
+export const settingsUpdateSchema = z.object({
+  display_name: z.string().trim().min(1, "Display name is required").max(120),
+  location: z.string().trim().min(1, "Location is required").max(120),
+  public_email: z.string().trim().email("Enter a valid email").max(120),
+
+  hero_headline: z.string().trim().min(1, "Hero headline is required").max(160),
+
+  hero_bio: z.string().trim().min(1, "Bio is required").max(2000),
+
+  github_url: z
+    .string()
+    .trim()
+    .url("Enter a valid GitHub URL")
+    .refine(
+      (value) => value.startsWith("https://github.com/"),
+      "GitHub URL must start with https://github.com/",
+    )
+    .optional()
+    .nullable(),
+
+  linkedin_url: z
+    .string()
+    .trim()
+    .url("Enter a valid LinkedIn URL")
+    .refine(
+      (value) =>
+        value.startsWith("https://www.linkedin.com/") ||
+        value.startsWith("https://linkedin.com/"),
+      "LinkedIn URL must start with https://linkedin.com/",
+    )
+    .optional()
+    .nullable(),
+
+  cv_url: relativeOrHttpUrlSchema.optional().nullable(),
+  tech_tags: z.array(techTagSchema).max(16).default([]),
+});
