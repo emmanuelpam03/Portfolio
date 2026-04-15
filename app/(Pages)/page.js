@@ -6,17 +6,41 @@ import Work from "@/app/components/Work";
 
 import { getAboutPublic } from "@/app/actions/aboutActions";
 import { getSettingsPublic } from "@/app/actions/settingsActions";
+import {
+  getFeaturedProjects,
+  getPublishedProjects,
+} from "@/app/actions/projectsActions";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [aboutResult, settingsResult] = await Promise.all([
-    getAboutPublic(),
-    getSettingsPublic(),
-  ]);
+  const [aboutResult, settingsResult, featuredProjectsResult] =
+    await Promise.all([
+      getAboutPublic(),
+      getSettingsPublic(),
+      getFeaturedProjects(6).catch((error) => {
+        console.error("Failed to load featured projects", error);
+        return [];
+      }),
+    ]);
 
   const about = aboutResult?.about ?? null;
   const settings = settingsResult?.settings ?? null;
+
+  let projects = Array.isArray(featuredProjectsResult)
+    ? featuredProjectsResult
+    : [];
+
+  if (!projects.length) {
+    const publishedProjects = await getPublishedProjects().catch((error) => {
+      console.error("Failed to load published projects", error);
+      return [];
+    });
+
+    projects = Array.isArray(publishedProjects)
+      ? publishedProjects.slice(0, 6)
+      : [];
+  }
 
   return (
     <>
@@ -27,7 +51,7 @@ export default async function Home() {
       />
       <About about={about} />
       <Services />
-      <Work />
+      <Work projects={projects} />
       <Contact />
     </>
   );

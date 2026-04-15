@@ -1,7 +1,32 @@
 "use server";
 
 import { contactSchema } from "@/app/lib/schema";
+import { Resend } from "resend";
+import { getSettingsPublic } from "@/app/actions/settingsActions";
 
+function trimOrNull(value) {
+  const text = String(value ?? "").trim();
+  return text.length ? text : null;
+}
+
+async function getContactDestinationEmail() {
+  let settingsResult;
+
+  try {
+    settingsResult = await getSettingsPublic();
+  } catch (error) {
+    console.error("Failed to load public settings", error);
+    return { email: null, message: "Unable to load site settings." };
+  }
+
+  const email = trimOrNull(settingsResult?.settings?.public_email);
+  const message =
+    typeof settingsResult?.message === "string" && settingsResult.message.trim()
+      ? settingsResult.message.trim()
+      : null;
+
+  return { email, message };
+}
 
 export async function submitContact(prevState, formData) {
   const raw = {
@@ -21,11 +46,55 @@ export async function submitContact(prevState, formData) {
     };
   }
 
-  // Frontend-only phase: no sending yet. When you're ready, we can forward
-  // this to an email provider (Resend) or Web3Forms from here.
+  const resendApiKey = trimOrNull(process.env.RESEND_API_KEY);
+  const resendFrom = trimOrNull(process.env.RESEND_FROM);
+
+  if (!resendApiKey || !resendFrom) {
+    return {
+      success: false,
+      message:
+        "Contact form is not configured yet. Set RESEND_API_KEY and RESEND_FROM.",
+      fields: raw,
+      errors: {},
+    };
+  }
+
+  const { email: toEmail, message: settingsMessage } =
+    await getContactDestinationEmail();
+
+  if (!toEmail) {
+    return {
+      success: false,
+      message:
+        settingsMessage ||
+        "Contact destination email is not configured. Set Public Email in Admin → Settings.",
+      fields: raw,
+      errors: {},
+    };
+  }
+
+  const resend = new Resend(resendApiKey);
+
+  try {
+    await resend.emails.send({
+      from: resendFrom,
+      to: toEmail,
+      subject: `Portfolio contact: ${parsed.data.name}`,
+      text: `New message from your portfolio contact form\n\nName: ${parsed.data.name}\nEmail: ${parsed.data.email}\n\nMessage:\n${parsed.data.message}`,
+    });
+  } catch (error) {
+    console.error("Failed to send contact email", error);
+    return {
+      success: false,
+      message: "Unable to send your message right now. Please try again.",
+      fields: raw,
+      errors: {},
+    };
+  }
+
   return {
     success: true,
-    message: "Form Submitted Successfully",
+    message: "Message sent successfully.",
     fields: { name: "", email: "", message: "" },
     errors: {},
   };

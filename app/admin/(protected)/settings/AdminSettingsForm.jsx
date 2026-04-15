@@ -338,7 +338,8 @@ export default function AdminSettingsForm({ initialSettings, setupMessage }) {
           }`}
         />
         <p className="text-xs text-gray-500 Ovo mt-2">
-          This is the email displayed on your homepage/footer.
+          This email is displayed on your homepage/footer and receives contact
+          form submissions.
         </p>
         {Array.isArray(errors?.public_email) && errors.public_email[0] ? (
           <p className="mt-2 text-sm text-red-600 Ovo">

@@ -7,14 +7,17 @@ import { motion } from "motion/react";
 import { ArrowRight, ArrowUpRight, Briefcase } from "lucide-react";
 
 const slugify = (value) =>
-  value
+  String(value ?? "")
     .toLowerCase()
     .trim()
     .replace(/['’]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 
-const Work = () => {
+const Work = ({ projects = [] }) => {
+  const items =
+    Array.isArray(projects) && projects.length ? projects : workData;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -68,65 +71,74 @@ const Work = () => {
         transition={{ duration: 0.6, delay: 0.9 }}
         className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mb-16"
       >
-        {workData.map((project, index) => (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 * index }}
-            whileHover={{ y: -8 }}
-            key={index}
-            className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500"
-          >
-            {/* Background Image */}
-            <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-110"
-              style={{ backgroundImage: `url(${project.bgImage})` }}
-            />
+        {items.map((project, index) => {
+          const slug = project?.slug
+            ? String(project.slug)
+            : slugify(project?.title);
+          const heroImage = project?.hero_image_url ?? project?.bgImage ?? "";
+          const title = project?.title ?? "";
+          const description = project?.description ?? "";
 
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500"></div>
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 * index }}
+              whileHover={{ y: -8 }}
+              key={project?.id ?? slug ?? `${title}-${index}`}
+              className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500"
+            >
+              {/* Background Image */}
+              <div
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-110"
+                style={{ backgroundImage: `url(${heroImage})` }}
+              />
 
-            {/* Decorative border that appears on hover */}
-            <div className="absolute inset-0 border-4 border-transparent group-hover:border-blue-400/50 rounded-2xl transition-all duration-500"></div>
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500"></div>
 
-            {/* Content Card */}
-            <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-              <div className="bg-white/95 backdrop-blur-sm rounded-xl p-5 shadow-2xl">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
+              {/* Decorative border that appears on hover */}
+              <div className="absolute inset-0 border-4 border-transparent group-hover:border-blue-400/50 rounded-2xl transition-all duration-500"></div>
+
+              {/* Content Card */}
+              <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                <div className="bg-white/95 backdrop-blur-sm rounded-xl p-5 shadow-2xl">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <Link
+                        href={`/projects/${slug}`}
+                        aria-label={`View ${title}`}
+                        className="block"
+                      >
+                        <h2 className="font-bold text-lg text-gray-800 mb-1 group-hover:text-blue-600 transition-colors duration-300">
+                          {title}
+                        </h2>
+                        <p className="text-base text-gray-600 leading-relaxed">
+                          {description}
+                        </p>
+                      </Link>
+                    </div>
+
+                    {/* Action Button */}
                     <Link
-                      href={`/projects/${slugify(project.title)}`}
-                      aria-label={`View ${project.title}`}
-                      className="block"
+                      href={`/projects/${slug}`}
+                      aria-label={`View ${title}`}
+                      className="flex-shrink-0 w-11 h-11 rounded-full border-2 border-gray-800 flex items-center justify-center shadow-[3px_3px_0_#000] group-hover:shadow-[5px_5px_0_#000] group-hover:bg-gradient-to-br group-hover:from-blue-400 group-hover:to-purple-400 group-hover:border-transparent transition-all duration-300"
                     >
-                      <h2 className="font-bold text-lg text-gray-800 mb-1 group-hover:text-blue-600 transition-colors duration-300">
-                        {project.title}
-                      </h2>
-                      <p className="text-base text-gray-600 leading-relaxed">
-                        {project.description}
-                      </p>
+                      <ArrowUpRight
+                        className="w-5 h-5 text-gray-900 group-hover:text-white transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300"
+                        aria-hidden="true"
+                      />
                     </Link>
                   </div>
-
-                  {/* Action Button */}
-                  <Link
-                    href={`/projects/${slugify(project.title)}`}
-                    aria-label={`View ${project.title}`}
-                    className="flex-shrink-0 w-11 h-11 rounded-full border-2 border-gray-800 flex items-center justify-center shadow-[3px_3px_0_#000] group-hover:shadow-[5px_5px_0_#000] group-hover:bg-gradient-to-br group-hover:from-blue-400 group-hover:to-purple-400 group-hover:border-transparent transition-all duration-300"
-                  >
-                    <ArrowUpRight
-                      className="w-5 h-5 text-gray-900 group-hover:text-white transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300"
-                      aria-hidden="true"
-                    />
-                  </Link>
                 </div>
               </div>
-            </div>
 
-            {/* Corner accent */}
-            <div className="absolute top-4 right-4 w-12 h-12 border-t-2 border-r-2 border-white/30 rounded-tr-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          </motion.div>
-        ))}
+              {/* Corner accent */}
+              <div className="absolute top-4 right-4 w-12 h-12 border-t-2 border-r-2 border-white/30 rounded-tr-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            </motion.div>
+          );
+        })}
       </motion.div>
 
       {/* Show More Button */}

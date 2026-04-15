@@ -134,7 +134,13 @@ async function tryUpsertMediaAssetsForProject(data) {
   const heroUrl = String(data?.hero_image_url ?? "").trim();
   const posterUrls = new Set();
   if (heroUrl) {
-    items.push({ type: "image", url: heroUrl, poster_url: null, alt: null, caption: null });
+    items.push({
+      type: "image",
+      url: heroUrl,
+      poster_url: null,
+      alt: null,
+      caption: null,
+    });
   }
 
   const media = Array.isArray(data?.media) ? data.media : [];
@@ -154,7 +160,13 @@ async function tryUpsertMediaAssetsForProject(data) {
     const posterUrl = trimOrNull(item?.poster_url);
     if (posterUrl) {
       posterUrls.add(posterUrl);
-      items.push({ type: "image", url: posterUrl, poster_url: null, alt: null, caption: null });
+      items.push({
+        type: "image",
+        url: posterUrl,
+        poster_url: null,
+        alt: null,
+        caption: null,
+      });
     }
   }
 
@@ -269,7 +281,9 @@ function parseProjectFormData(formData) {
     project_github_url: String(formData.get("project_github_url") ?? "").trim(),
     is_published: checkboxToBoolean(formData.get("is_published")),
     is_featured: checkboxToBoolean(formData.get("is_featured")),
-    media: mediaParsed.map((item) => normalizeMediaItem(item, { projectTitle })),
+    media: mediaParsed.map((item) =>
+      normalizeMediaItem(item, { projectTitle }),
+    ),
   };
 }
 
@@ -325,6 +339,25 @@ async function getProjectWithMediaById(projectId) {
     ORDER BY sort_order ASC, created_at ASC
   `;
   return media;
+}
+
+// Find a published project by slug (public use). Returns null if not found.
+export async function findPublishedProjectBySlug(slug) {
+  const safeSlug = String(slug ?? "").trim();
+  if (!safeSlug) return null;
+
+  const projects = await sql`
+    SELECT id, slug, title, description, hero_image_url, project_live_url, project_github_url, is_published, is_featured, created_at, updated_at
+    FROM projects
+    WHERE slug = ${safeSlug} AND is_published = true
+    LIMIT 1
+  `;
+
+  if (!projects.length) return null;
+
+  const project = projects[0];
+  const media = await getProjectWithMediaById(project.id);
+  return { ...project, media };
 }
 
 // Get Project by Slug (published only) + media
