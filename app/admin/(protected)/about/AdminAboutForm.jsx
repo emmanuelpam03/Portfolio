@@ -91,6 +91,23 @@ function normalizeInitialTools(initialAbout) {
     );
 }
 
+function normalizeInitialHeroLanguages(initialAbout) {
+  const items = Array.isArray(initialAbout?.hero_languages)
+    ? [...initialAbout.hero_languages]
+    : [];
+  items.sort((a, b) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0));
+
+  return items
+    .map((item) => ({
+      media_asset_id: item?.media_asset_id ?? item?.id ?? "",
+      url: item?.url ?? "",
+      alt: item?.alt ?? "",
+    }))
+    .filter(
+      (item) => typeof item.media_asset_id === "string" && item.media_asset_id,
+    );
+}
+
 function normalizeInitialImage(image) {
   if (!image || typeof image !== "object") return null;
 
@@ -121,6 +138,7 @@ function MediaPicker({
             Select an image from your media library.
           </p>
         </div>
+
         <div className="flex gap-2 w-full sm:w-auto">
           <button
             type="button"
@@ -139,7 +157,7 @@ function MediaPicker({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
         {images.length === 0 ? (
           <div className="col-span-full rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-sm text-gray-600 Ovo">
@@ -221,6 +239,9 @@ export default function AdminAboutForm({
 
   const [cards, setCards] = useState(() => normalizeInitialCards(initialAbout));
   const [tools, setTools] = useState(() => normalizeInitialTools(initialAbout));
+  const [heroLanguages, setHeroLanguages] = useState(() =>
+    normalizeInitialHeroLanguages(initialAbout),
+  );
   const [heroImage, setHeroImage] = useState(() =>
     normalizeInitialImage(initialAbout?.hero_image),
   );
@@ -228,14 +249,18 @@ export default function AdminAboutForm({
     normalizeInitialImage(initialAbout?.about_image),
   );
 
-  const [openPicker, setOpenPicker] = useState(null); // 'hero' | 'about' | 'tool'
+  const [openPicker, setOpenPicker] = useState(null); // 'hero' | 'about' | 'heroLanguage' | 'tool'
   const [toolEditIndex, setToolEditIndex] = useState(null);
+  const [heroLanguageEditIndex, setHeroLanguageEditIndex] = useState(null);
 
   const readyForDbWrites = !setupMessage;
   const errors = state?.errors ?? {};
 
   const toolsJson = JSON.stringify(
     tools.map((tool) => ({ media_asset_id: tool.media_asset_id })),
+  );
+  const heroLanguagesJson = JSON.stringify(
+    heroLanguages.map((item) => ({ media_asset_id: item.media_asset_id })),
   );
   const cardsJson = JSON.stringify(cards);
 
@@ -269,6 +294,36 @@ export default function AdminAboutForm({
     });
   }
 
+  function upsertHeroLanguageAsset(asset, indexToReplace = null) {
+    if (!asset?.id) return;
+
+    const nextItem = {
+      media_asset_id: asset.id,
+      url: asset.url,
+      alt: asset.alt,
+    };
+
+    setHeroLanguages((prev) => {
+      const current = Array.isArray(prev) ? prev : [];
+
+      if (
+        indexToReplace !== null &&
+        indexToReplace >= 0 &&
+        indexToReplace < current.length
+      ) {
+        const next = [...current];
+        next[indexToReplace] = nextItem;
+        return next.filter(
+          (item, i) => i === indexToReplace || item.media_asset_id !== asset.id,
+        );
+      }
+
+      const exists = current.some((t) => t.media_asset_id === asset.id);
+      if (exists) return current;
+      return [...current, nextItem];
+    });
+  }
+
   return (
     <form action={formAction} className="mt-6" noValidate>
       {(setupMessage || state?.message) && (
@@ -286,6 +341,11 @@ export default function AdminAboutForm({
       <input type="hidden" name="tools_json" value={toolsJson} />
       <input
         type="hidden"
+        name="hero_languages_json"
+        value={heroLanguagesJson}
+      />
+      <input
+        type="hidden"
         name="hero_image_asset_id"
         value={heroImage?.id ?? ""}
       />
@@ -295,8 +355,8 @@ export default function AdminAboutForm({
         value={aboutImage?.id ?? ""}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="flex flex-wrap gap-6">
+        <div className="flex-[2_1_520px] min-w-[280px] sm:min-w-[320px] lg:min-w-[420px] space-y-6">
           <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6">
             <h3 className="text-lg font-bold text-gray-900 Ovo mb-1">
               Description
@@ -437,7 +497,7 @@ export default function AdminAboutForm({
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="flex-[1_1_360px] min-w-[280px] sm:min-w-[320px] lg:min-w-[380px] space-y-6">
           <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6">
             <h3 className="text-lg font-bold text-gray-900 Ovo mb-1">
               Pictures
@@ -585,6 +645,181 @@ export default function AdminAboutForm({
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-bold text-gray-900 Ovo mb-1">
+                  Header languages
+                </h3>
+                <p className="text-base text-gray-700 Ovo">
+                  Icons shown in the Header section.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setHeroLanguageEditIndex(null);
+                  setOpenPicker((prev) =>
+                    prev === "heroLanguage" ? null : "heroLanguage",
+                  );
+                }}
+                disabled={!readyForDbWrites || isPending}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-full border border-gray-200 bg-white text-gray-700 text-base font-medium hover:bg-linear-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 disabled:opacity-60"
+              >
+                Add
+              </button>
+            </div>
+
+            {Array.isArray(errors?.hero_languages) &&
+              errors.hero_languages.length > 0 && (
+                <p className="mt-4 text-sm text-red-600 Ovo">
+                  {errors.hero_languages[0]}
+                </p>
+              )}
+
+            <div className="mt-6 flex items-center justify-start flex-wrap gap-3">
+              {heroLanguages.length === 0 ? (
+                <p className="text-sm text-gray-600 Ovo">
+                  No languages selected yet.
+                </p>
+              ) : (
+                heroLanguages.map((item, index) => {
+                  const label = item.alt || `Language ${index + 1}`;
+
+                  return (
+                    <div
+                      key={`${item.media_asset_id}-${index}`}
+                      className="group relative"
+                    >
+                      <button
+                        type="button"
+                        className="relative w-14 h-14 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 shadow-md hover:shadow-xl flex items-center justify-center transition-all duration-300 overflow-hidden"
+                        aria-label={`${label} (edit)`}
+                        onClick={() => {
+                          setHeroLanguageEditIndex(index);
+                          setOpenPicker("heroLanguage");
+                        }}
+                        disabled={!readyForDbWrites || isPending}
+                      >
+                        <div className="absolute inset-0 bg-linear-to-br from-blue-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        {item.url && canPreviewWithNextImage(item.url) ? (
+                          <Image
+                            src={item.url}
+                            alt={label}
+                            width={28}
+                            height={28}
+                            className="relative z-10 w-7 h-7 object-contain"
+                          />
+                        ) : (
+                          <span className="relative z-10 text-xs text-gray-600 Ovo">
+                            N/A
+                          </span>
+                        )}
+                      </button>
+
+                      <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-200 absolute left-1/2 top-full -translate-x-1/2 pt-2 flex flex-wrap gap-2 z-50">
+                        <button
+                          type="button"
+                          className="pointer-events-auto px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60"
+                          onClick={() =>
+                            setHeroLanguages((prev) =>
+                              moveItem(prev, index, index - 1),
+                            )
+                          }
+                          disabled={
+                            index === 0 || !readyForDbWrites || isPending
+                          }
+                        >
+                          Up
+                        </button>
+                        <button
+                          type="button"
+                          className="pointer-events-auto px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60"
+                          onClick={() =>
+                            setHeroLanguages((prev) =>
+                              moveItem(prev, index, index + 1),
+                            )
+                          }
+                          disabled={
+                            index === heroLanguages.length - 1 ||
+                            !readyForDbWrites ||
+                            isPending
+                          }
+                        >
+                          Down
+                        </button>
+                        <button
+                          type="button"
+                          className="pointer-events-auto px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60"
+                          onClick={() => {
+                            setHeroLanguageEditIndex(index);
+                            setOpenPicker("heroLanguage");
+                          }}
+                          disabled={!readyForDbWrites || isPending}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="pointer-events-auto px-3 py-1.5 rounded-full border border-gray-200 bg-white text-red-600 text-sm font-medium disabled:opacity-60"
+                          onClick={() =>
+                            setHeroLanguages((prev) =>
+                              prev.filter((_, i) => i !== index),
+                            )
+                          }
+                          disabled={!readyForDbWrites || isPending}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {openPicker === "heroLanguage" && (
+              <MediaPicker
+                title={
+                  heroLanguageEditIndex === null
+                    ? "Add a language icon"
+                    : "Replace language icon"
+                }
+                images={mediaImages}
+                selectedId={
+                  heroLanguageEditIndex !== null &&
+                  heroLanguages[heroLanguageEditIndex]
+                    ? heroLanguages[heroLanguageEditIndex].media_asset_id
+                    : null
+                }
+                onSelect={(asset) => {
+                  upsertHeroLanguageAsset(asset, heroLanguageEditIndex);
+                  setOpenPicker(null);
+                  setHeroLanguageEditIndex(null);
+                }}
+                onClear={() => {
+                  if (heroLanguageEditIndex !== null) {
+                    setHeroLanguages((prev) =>
+                      prev.filter((_, i) => i !== heroLanguageEditIndex),
+                    );
+                  }
+                  setOpenPicker(null);
+                  setHeroLanguageEditIndex(null);
+                }}
+                onClose={() => {
+                  setOpenPicker(null);
+                  setHeroLanguageEditIndex(null);
+                }}
+              />
+            )}
+
+            <div className="mt-5 rounded-2xl border border-gray-200 bg-linear-to-r from-blue-50/60 to-purple-50/60 p-4">
+              <p className="text-sm text-gray-600 Ovo">
+                Tip: hover an icon to reorder.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 Ovo mb-1">
                   Tools I Use
                 </h3>
                 <p className="text-base text-gray-700 Ovo">
@@ -595,6 +830,7 @@ export default function AdminAboutForm({
                 type="button"
                 onClick={() => {
                   setToolEditIndex(null);
+                  setHeroLanguageEditIndex(null);
                   setOpenPicker((prev) => (prev === "tool" ? null : "tool"));
                 }}
                 disabled={!readyForDbWrites || isPending}
@@ -644,7 +880,7 @@ export default function AdminAboutForm({
                         )}
                       </button>
 
-                      <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-200 absolute left-1/2 -translate-x-1/2 -bottom-2 translate-y-full flex gap-2">
+                      <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-200 absolute left-1/2 top-full -translate-x-1/2 pt-2 flex flex-wrap gap-2 z-50">
                         <button
                           type="button"
                           className="pointer-events-auto px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60"
@@ -718,6 +954,7 @@ export default function AdminAboutForm({
                   upsertToolAsset(asset, toolEditIndex);
                   setOpenPicker(null);
                   setToolEditIndex(null);
+                  setHeroLanguageEditIndex(null);
                 }}
                 onClear={() => {
                   if (toolEditIndex !== null) {
@@ -727,10 +964,12 @@ export default function AdminAboutForm({
                   }
                   setOpenPicker(null);
                   setToolEditIndex(null);
+                  setHeroLanguageEditIndex(null);
                 }}
                 onClose={() => {
                   setOpenPicker(null);
                   setToolEditIndex(null);
+                  setHeroLanguageEditIndex(null);
                 }}
               />
             )}

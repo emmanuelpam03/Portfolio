@@ -14,7 +14,10 @@ export default async function Home() {
 
   return (
     <>
-      <Header heroImage={about?.hero_image ?? null} />
+      <Header
+        heroImage={about?.hero_image ?? null}
+        heroLanguages={about?.hero_languages ?? []}
+      />
       <About about={about} />
       <Services />
       <Work />

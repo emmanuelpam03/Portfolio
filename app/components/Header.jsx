@@ -6,7 +6,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { ArrowRight, Briefcase, Download, Hand, MapPin } from "lucide-react";
 
-const Header = ({ heroImage = null }) => {
+const Header = ({ heroImage = null, heroLanguages = [] }) => {
   const heroSrc =
     heroImage && typeof heroImage?.url === "string" && heroImage.url
       ? heroImage.url
@@ -16,6 +16,23 @@ const Header = ({ heroImage = null }) => {
     heroImage && typeof heroImage?.alt === "string" && heroImage.alt
       ? heroImage.alt
       : "Emmanuel Pam";
+
+  const sortedHeroLanguages = Array.isArray(heroLanguages)
+    ? [...heroLanguages].sort(
+        (a, b) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0),
+      )
+    : [];
+
+  const heroLanguagesForUi = sortedHeroLanguages
+    .map((item, index) => ({
+      key: item?.media_asset_id ?? item?.id ?? item?.url ?? `lang-${index}`,
+      src: item?.url ?? "",
+      alt:
+        item && typeof item?.alt === "string" && item.alt.trim()
+          ? item.alt
+          : `Language ${index + 1}`,
+    }))
+    .filter((item) => typeof item.src === "string" && item.src);
 
   return (
     <div className="relative w-full min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -85,7 +102,8 @@ const Header = ({ heroImage = null }) => {
             transition={{ duration: 0.8, delay: 0.8 }}
             className="text-gray-600 text-base sm:text-lg leading-relaxed max-w-xl"
           >
-            I design, build, and ship full-stack products: responsive UI, secure backends, and scalable data — with React/Next.js.
+            I design, build, and ship full-stack products: responsive UI, secure
+            backends, and scalable data — with React/Next.js.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -124,16 +142,44 @@ const Header = ({ heroImage = null }) => {
             transition={{ duration: 0.8, delay: 1.2 }}
             className="flex flex-wrap gap-2 pt-2 justify-center lg:justify-start"
           >
-            {["React", "Next.js", "TypeScript", "Tailwind"].map(
-              (tech, index) => (
-                <span
-                  key={tech}
-                  className="px-3 py-1.5 bg-gradient-to-r from-blue-50 to-purple-50 text-gray-700 rounded-full text-sm font-medium border border-gray-200"
-                >
-                  {tech}
-                </span>
-              ),
-            )}
+            {heroLanguagesForUi.length
+              ? heroLanguagesForUi.map((item, index) => (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: 0.05 * index }}
+                    key={item.key}
+                    className="group relative"
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.15, rotate: 5 }}
+                      className="relative w-12 h-12 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 shadow-md hover:shadow-xl flex items-center justify-center cursor-pointer transition-all duration-300 overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <Image
+                        src={item.src}
+                        alt={item.alt}
+                        width={24}
+                        height={24}
+                        className="relative z-10 w-6 h-6 object-contain"
+                      />
+                    </motion.div>
+
+                    <div className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-20">
+                      <div className="px-3 py-1.5 rounded-full border border-gray-200 bg-white/90 backdrop-blur-sm text-xs text-gray-700 font-semibold shadow-md Ovo max-w-[180px] truncate">
+                        {item.alt}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              : ["React", "Next.js", "TypeScript", "Tailwind"].map((tech) => (
+                  <span
+                    key={tech}
+                    className="px-3 py-1.5 bg-gradient-to-r from-blue-50 to-purple-50 text-gray-700 rounded-full text-sm font-medium border border-gray-200"
+                  >
+                    {tech}
+                  </span>
+                ))}
           </motion.div>
         </div>
 

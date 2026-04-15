@@ -244,20 +244,30 @@ const About = ({ about = null }) => {
                   initial={{ opacity: 0, scale: 0 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: 0.05 * index }}
-                  whileHover={{ scale: 1.15, rotate: 5 }}
                   key={tool.key}
-                  className="group relative w-14 h-14 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 shadow-md hover:shadow-xl flex items-center justify-center cursor-pointer transition-all duration-300 overflow-hidden"
+                  className="group relative"
                 >
-                  {/* Hover background */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <motion.div
+                    whileHover={{ scale: 1.15, rotate: 5 }}
+                    className="relative w-14 h-14 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 shadow-md hover:shadow-xl flex items-center justify-center cursor-pointer transition-all duration-300 overflow-hidden"
+                  >
+                    {/* Hover background */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                  <Image
-                    src={tool.src}
-                    alt={tool.alt}
-                    width={28}
-                    height={28}
-                    className="relative z-10 w-7 h-7 object-contain"
-                  />
+                    <Image
+                      src={tool.src}
+                      alt={tool.alt}
+                      width={28}
+                      height={28}
+                      className="relative z-10 w-7 h-7 object-contain"
+                    />
+                  </motion.div>
+
+                  <div className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-20">
+                    <div className="px-3 py-1.5 rounded-full border border-gray-200 bg-white/90 backdrop-blur-sm text-xs text-gray-700 font-semibold shadow-md Ovo max-w-[180px] truncate">
+                      {tool.alt}
+                    </div>
+                  </div>
                 </motion.div>
               ))}
             </motion.div>

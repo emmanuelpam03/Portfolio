@@ -45,20 +45,27 @@ function isMissingAboutTables(error) {
   return (
     message.includes('relation "about_content" does not exist') ||
     message.includes('relation "about_cards" does not exist') ||
-    message.includes('relation "about_tools" does not exist')
+    message.includes('relation "about_tools" does not exist') ||
+    message.includes('relation "hero_languages" does not exist')
   );
 }
 
-function aboutUsageMessage({ usedAsHero, usedAsAboutImage, usedAsTool }) {
+function aboutUsageMessage({
+  usedAsHero,
+  usedAsAboutImage,
+  usedAsTool,
+  usedAsHeroLanguage,
+}) {
   const parts = [];
-  if (usedAsHero) parts.push("as the About hero image");
+  if (usedAsHero) parts.push("as the Header hero image");
   if (usedAsAboutImage) parts.push("as the About section image");
   if (usedAsTool) parts.push("in the About tools list");
+  if (usedAsHeroLanguage) parts.push("in the Header languages list");
 
   const details = parts.length ? ` (${parts.join(", ")})` : "";
 
   return (
-    "This media is currently used in your About section" +
+    "This media is currently used in your site content" +
     details +
     ". Replace/remove it in Admin → About first, then delete the media."
   );
@@ -93,8 +100,19 @@ async function getAboutUsageForMediaAssetId(id) {
 
     const usedAsTool = Array.isArray(toolRows) && toolRows.length > 0;
 
-    if (!usedAsHero && !usedAsAboutImage && !usedAsTool) return null;
-    return { usedAsHero, usedAsAboutImage, usedAsTool };
+    const heroLanguageRows = await sql`
+      SELECT id
+      FROM hero_languages
+      WHERE media_asset_id = ${id}
+      LIMIT 1
+    `;
+
+    const usedAsHeroLanguage =
+      Array.isArray(heroLanguageRows) && heroLanguageRows.length > 0;
+
+    if (!usedAsHero && !usedAsAboutImage && !usedAsTool && !usedAsHeroLanguage)
+      return null;
+    return { usedAsHero, usedAsAboutImage, usedAsTool, usedAsHeroLanguage };
   } catch (error) {
     if (isMissingAboutTables(error)) return null;
     throw error;

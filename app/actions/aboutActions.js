@@ -21,7 +21,8 @@ function isMissingAboutTables(error) {
   return (
     message.includes('relation "about_content" does not exist') ||
     message.includes('relation "about_cards" does not exist') ||
-    message.includes('relation "about_tools" does not exist')
+    message.includes('relation "about_tools" does not exist') ||
+    message.includes('relation "hero_languages" does not exist')
   );
 }
 
@@ -84,12 +85,44 @@ function safeToolsFromJson(value) {
   return parsed;
 }
 
+function safeHeroLanguagesFromJson(value) {
+  const raw = String(value ?? "[]");
+  let parsed;
+
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("Invalid hero languages JSON");
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Invalid hero languages JSON");
+  }
+
+  return parsed;
+}
+
 function dedupeToolsPreserveOrder(tools) {
   const seen = new Set();
   const next = [];
 
   for (const tool of tools) {
     const id = String(tool?.media_asset_id ?? "").trim();
+    if (!id) continue;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    next.push({ media_asset_id: id });
+  }
+
+  return next;
+}
+
+function dedupeHeroLanguagesPreserveOrder(items) {
+  const seen = new Set();
+  const next = [];
+
+  for (const item of items) {
+    const id = String(item?.media_asset_id ?? "").trim();
     if (!id) continue;
     if (seen.has(id)) continue;
     seen.add(id);
@@ -148,7 +181,29 @@ async function loadAboutToolsWithAssets() {
   return Array.isArray(rows) ? rows : [];
 }
 
-function normalizeAboutResult({ contentRow, cardsRows, toolsRows }) {
+async function loadHeroLanguagesWithAssets() {
+  const rows = await sql`
+    SELECT
+      t.id,
+      t.media_asset_id,
+      t.sort_order,
+      a.url,
+      a.alt
+    FROM hero_languages t
+    JOIN media_assets a ON a.id = t.media_asset_id
+    WHERE t.about_key = 'default'
+    ORDER BY t.sort_order ASC, t.created_at ASC
+  `;
+
+  return Array.isArray(rows) ? rows : [];
+}
+
+function normalizeAboutResult({
+  contentRow,
+  cardsRows,
+  toolsRows,
+  heroLanguagesRows,
+}) {
   const aboutText = contentRow?.about_text ? String(contentRow.about_text) : "";
 
   const heroImage =
@@ -193,24 +248,44 @@ function normalizeAboutResult({ contentRow, cardsRows, toolsRows }) {
     }))
     .filter((row) => row.media_asset_id && row.url);
 
+  const heroLanguages = (
+    Array.isArray(heroLanguagesRows) ? heroLanguagesRows : []
+  )
+    .map((row) => ({
+      id: String(row?.id ?? ""),
+      media_asset_id: String(row?.media_asset_id ?? ""),
+      sort_order: Number(row?.sort_order ?? 0),
+      url: String(row?.url ?? ""),
+      alt: row?.alt ? String(row.alt) : "",
+    }))
+    .filter((row) => row.media_asset_id && row.url);
+
   return {
     about_text: aboutText,
     hero_image: heroImage,
     about_image: aboutImage,
     cards,
     tools,
+    hero_languages: heroLanguages,
   };
 }
 
 export async function getAboutPublic() {
   try {
-    const [contentRow, cardsRows, toolsRows] = await Promise.all([
-      loadAboutRow(),
-      loadAboutCards(),
-      loadAboutToolsWithAssets(),
-    ]);
+    const [contentRow, cardsRows, toolsRows, heroLanguagesRows] =
+      await Promise.all([
+        loadAboutRow(),
+        loadAboutCards(),
+        loadAboutToolsWithAssets(),
+        loadHeroLanguagesWithAssets(),
+      ]);
 
-    const about = normalizeAboutResult({ contentRow, cardsRows, toolsRows });
+    const about = normalizeAboutResult({
+      contentRow,
+      cardsRows,
+      toolsRows,
+      heroLanguagesRows,
+    });
 
     return { ok: true, about, message: null };
   } catch (error) {
@@ -228,13 +303,20 @@ export async function getAboutAdmin() {
   await requireAdmin();
 
   try {
-    const [contentRow, cardsRows, toolsRows] = await Promise.all([
-      loadAboutRow(),
-      loadAboutCards(),
-      loadAboutToolsWithAssets(),
-    ]);
+    const [contentRow, cardsRows, toolsRows, heroLanguagesRows] =
+      await Promise.all([
+        loadAboutRow(),
+        loadAboutCards(),
+        loadAboutToolsWithAssets(),
+        loadHeroLanguagesWithAssets(),
+      ]);
 
-    const about = normalizeAboutResult({ contentRow, cardsRows, toolsRows });
+    const about = normalizeAboutResult({
+      contentRow,
+      cardsRows,
+      toolsRows,
+      heroLanguagesRows,
+    });
 
     return { ok: true, about, message: null };
   } catch (error) {
@@ -255,6 +337,9 @@ export async function updateAboutAction(_prevState, formData) {
   try {
     const cards = safeCardsFromJson(formData.get("cards_json"));
     const tools = safeToolsFromJson(formData.get("tools_json"));
+    const heroLanguages = safeHeroLanguagesFromJson(
+      formData.get("hero_languages_json"),
+    );
 
     raw = {
       about_text: String(formData.get("about_text") ?? ""),
@@ -270,6 +355,7 @@ export async function updateAboutAction(_prevState, formData) {
         icon_key: card?.icon_key == null ? null : String(card.icon_key),
       })),
       tools: dedupeToolsPreserveOrder(tools),
+      hero_languages: dedupeHeroLanguagesPreserveOrder(heroLanguages),
     };
   } catch (error) {
     return {
@@ -346,6 +432,25 @@ export async function updateAboutAction(_prevState, formData) {
         VALUES (
           'default',
           ${tool.media_asset_id},
+          ${index}
+        )
+      `,
+    ),
+    sql`
+      DELETE FROM hero_languages
+      WHERE about_key = 'default'
+    `,
+    ...data.hero_languages.map(
+      (language, index) =>
+        sql`
+        INSERT INTO hero_languages (
+          about_key,
+          media_asset_id,
+          sort_order
+        )
+        VALUES (
+          'default',
+          ${language.media_asset_id},
           ${index}
         )
       `,

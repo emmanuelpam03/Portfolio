@@ -82,4 +82,5 @@ export const aboutUpdateSchema = z.object({
 
   cards: z.array(aboutCardSchema).length(3, "About must have exactly 3 cards"),
   tools: z.array(aboutToolSchema).default([]),
+  hero_languages: z.array(aboutToolSchema).default([]),
 });

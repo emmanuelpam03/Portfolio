@@ -1,4 +1,4 @@
--- About content tables (singleton + cards + tools)
+-- About content tables (singleton + cards + tools + header languages)
 --
 -- Apply this AFTER app/lib/media.sql (requires the `media_assets` table).
 -- Safe to run multiple times.
@@ -51,12 +51,26 @@ CREATE TABLE IF NOT EXISTS about_tools (
   CONSTRAINT about_tools_about_asset_uidx UNIQUE (about_key, media_asset_id)
 );
 
+-- Language / tech icons shown in the homepage Header section
+CREATE TABLE IF NOT EXISTS hero_languages (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  about_key      text NOT NULL REFERENCES about_content(singleton_key) ON DELETE CASCADE,
+  media_asset_id uuid NOT NULL REFERENCES media_assets(id) ON DELETE RESTRICT,
+  sort_order     int NOT NULL DEFAULT 0,
+  created_at     timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT hero_languages_about_asset_uidx UNIQUE (about_key, media_asset_id)
+);
+
 -- Ordering indexes
 CREATE INDEX IF NOT EXISTS about_cards_sort_idx
   ON about_cards (about_key, sort_order);
 
 CREATE INDEX IF NOT EXISTS about_tools_sort_idx
   ON about_tools (about_key, sort_order);
+
+CREATE INDEX IF NOT EXISTS hero_languages_sort_idx
+  ON hero_languages (about_key, sort_order);
 
 -- Auto-update updated_at (separate function name to avoid clobbering other SQL files)
 CREATE OR REPLACE FUNCTION about_set_updated_at()
