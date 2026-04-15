@@ -713,7 +713,7 @@ export default function AdminAboutForm({
                         )}
                       </button>
 
-                      <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-200 absolute left-1/2 top-full -translate-x-1/2 pt-2 flex flex-wrap gap-2 z-50">
+                      <div className="invisible pointer-events-none opacity-0 group-hover:visible group-focus-within:visible group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-200 absolute left-1/2 top-full -translate-x-1/2 pt-2 flex flex-wrap gap-2 z-50">
                         <button
                           type="button"
                           className="pointer-events-auto px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60"
@@ -880,7 +880,7 @@ export default function AdminAboutForm({
                         )}
                       </button>
 
-                      <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-200 absolute left-1/2 top-full -translate-x-1/2 pt-2 flex flex-wrap gap-2 z-50">
+                      <div className="invisible pointer-events-none opacity-0 group-hover:visible group-focus-within:visible group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-200 absolute left-1/2 top-full -translate-x-1/2 pt-2 flex flex-wrap gap-2 z-50">
                         <button
                           type="button"
                           className="pointer-events-auto px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60"
