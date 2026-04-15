@@ -129,6 +129,10 @@ function normalizeSettingsRow(row) {
 export async function getSettingsPublic() {
   try {
     const row = await loadSettingsRow();
+    if (!row) {
+      return { ok: true, settings: null, message: null };
+    }
+
     return { ok: true, settings: normalizeSettingsRow(row), message: null };
   } catch (error) {
     const setupMessage = setupMessageFromError(error);
@@ -145,6 +149,10 @@ export async function getSettingsAdmin() {
 
   try {
     const row = await loadSettingsRow();
+    if (!row) {
+      return { ok: true, settings: null, message: null };
+    }
+
     return { ok: true, settings: normalizeSettingsRow(row), message: null };
   } catch (error) {
     const setupMessage = setupMessageFromError(error);
@@ -246,7 +254,7 @@ export async function updateSettingsAction(_prevState, formData) {
     };
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath("/admin/settings");
 
   return {

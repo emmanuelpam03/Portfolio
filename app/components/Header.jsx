@@ -7,8 +7,78 @@ import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { ArrowRight, Briefcase, Download, Hand, MapPin } from "lucide-react";
 
-const Header = ({ heroImage = null, heroLanguages = [] }) => {
+const FALLBACK_SETTINGS = {
+  display_name: "Emmanuel Pam",
+  location: "Based in Mauritius",
+  hero_headline: "Full-Stack Developer",
+  hero_bio:
+    "I design, build, and ship full-stack products: responsive UI, secure backends, and scalable data — with React/Next.js.",
+  cv_url: "/sample-resume.pdf",
+  tech_tags: ["React", "Next.js", "TypeScript", "Tailwind"],
+};
+
+const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
   const [languageTooltip, setLanguageTooltip] = React.useState(null);
+
+  const hasSettings = Boolean(settings && typeof settings === "object");
+
+  const displayName =
+    settings &&
+    typeof settings?.display_name === "string" &&
+    settings.display_name.trim()
+      ? settings.display_name.trim()
+      : FALLBACK_SETTINGS.display_name;
+
+  const locationText =
+    settings &&
+    typeof settings?.location === "string" &&
+    settings.location.trim()
+      ? settings.location.trim()
+      : FALLBACK_SETTINGS.location;
+
+  const headlineText =
+    settings &&
+    typeof settings?.hero_headline === "string" &&
+    settings.hero_headline.trim()
+      ? settings.hero_headline.trim()
+      : FALLBACK_SETTINGS.hero_headline;
+
+  const bioText =
+    settings &&
+    typeof settings?.hero_bio === "string" &&
+    settings.hero_bio.trim()
+      ? settings.hero_bio.trim()
+      : FALLBACK_SETTINGS.hero_bio;
+
+  const cvHref = hasSettings
+    ? typeof settings?.cv_url === "string" && settings.cv_url.trim()
+      ? settings.cv_url.trim()
+      : ""
+    : FALLBACK_SETTINGS.cv_url;
+
+  const normalizedTechTags = (() => {
+    if (!hasSettings) return FALLBACK_SETTINGS.tech_tags;
+
+    const list = Array.isArray(settings?.tech_tags) ? settings.tech_tags : [];
+    const seen = new Set();
+    const next = [];
+
+    for (const item of list) {
+      const text = String(item ?? "").trim();
+      if (!text) continue;
+      const key = text.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      next.push(text);
+      if (next.length >= 16) break;
+    }
+
+    return next;
+  })();
+
+  const headlineParts = headlineText.split(/\s+/).filter(Boolean);
+  const headlinePrimary = headlineParts[0] ?? "";
+  const headlineSecondary = headlineParts.slice(1).join(" ");
 
   const heroSrc =
     heroImage && typeof heroImage?.url === "string" && heroImage.url
@@ -18,7 +88,7 @@ const Header = ({ heroImage = null, heroLanguages = [] }) => {
   const heroAlt =
     heroImage && typeof heroImage?.alt === "string" && heroImage.alt
       ? heroImage.alt
-      : "Emmanuel Pam";
+      : displayName;
 
   const sortedHeroLanguages = Array.isArray(heroLanguages)
     ? [...heroLanguages].sort(
@@ -86,7 +156,7 @@ const Header = ({ heroImage = null, heroLanguages = [] }) => {
             transition={{ duration: 0.8, delay: 0.4 }}
           >
             <h3 className="text-base md:text-lg Ovo text-gray-600 mb-1 flex items-center gap-2 justify-center lg:justify-start">
-              Hi! I&apos;m Emmanuel Pam
+              Hi! I&apos;m {displayName}
               <motion.span
                 animate={{ rotate: [0, 14, -8, 14, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
@@ -96,10 +166,14 @@ const Header = ({ heroImage = null, heroLanguages = [] }) => {
             </h3>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl Ovo font-bold leading-tight">
               <span className="bg-gradient-to-r from-gray-900 via-blue-800 to-purple-700 bg-clip-text text-transparent">
-                Full-Stack
+                {headlinePrimary || headlineText}
               </span>
-              <br />
-              <span className="text-gray-800">Developer</span>
+              {headlineSecondary ? (
+                <>
+                  <br />
+                  <span className="text-gray-800">{headlineSecondary}</span>
+                </>
+              ) : null}
             </h1>
           </motion.div>
 
@@ -111,7 +185,7 @@ const Header = ({ heroImage = null, heroLanguages = [] }) => {
             className="flex items-center gap-2 text-blue-600 font-medium justify-center lg:justify-start"
           >
             <MapPin className="w-5 h-5" aria-hidden="true" />
-            <span>Based in Mauritius</span>
+            <span>{locationText}</span>
           </motion.div>
 
           {/* Description */}
@@ -121,8 +195,7 @@ const Header = ({ heroImage = null, heroLanguages = [] }) => {
             transition={{ duration: 0.8, delay: 0.8 }}
             className="text-gray-600 text-base sm:text-lg leading-relaxed max-w-xl"
           >
-            I design, build, and ship full-stack products: responsive UI, secure
-            backends, and scalable data — with React/Next.js.
+            {bioText}
           </motion.p>
 
           {/* CTA Buttons */}
@@ -142,16 +215,18 @@ const Header = ({ heroImage = null, heroLanguages = [] }) => {
               <ArrowRight className="w-5 h-5" aria-hidden="true" />
             </motion.a>
 
-            <motion.a
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              href="/sample-resume.pdf"
-              download
-              className="px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 flex items-center gap-2 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-base"
-            >
-              <Download className="w-4 h-4" aria-hidden="true" />
-              <span>Download CV</span>
-            </motion.a>
+            {cvHref ? (
+              <motion.a
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                href={cvHref}
+                download={Boolean(cvHref && cvHref.startsWith("/"))}
+                className="px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 flex items-center gap-2 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-base"
+              >
+                <Download className="w-4 h-4" aria-hidden="true" />
+                <span>Download CV</span>
+              </motion.a>
+            ) : null}
           </motion.div>
 
           {/* Tech Stack Pills */}
@@ -189,7 +264,7 @@ const Header = ({ heroImage = null, heroLanguages = [] }) => {
                     </motion.div>
                   </motion.div>
                 ))
-              : ["React", "Next.js", "TypeScript", "Tailwind"].map((tech) => (
+              : normalizedTechTags.map((tech) => (
                   <span
                     key={tech}
                     className="px-3 py-1.5 bg-gradient-to-r from-blue-50 to-purple-50 text-gray-700 rounded-full text-sm font-medium border border-gray-200"

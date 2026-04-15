@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 
 import { deleteProjectAction } from "@/app/actions/projectsActions";
@@ -10,13 +10,9 @@ export default function AdminProjectDeleteForm({ id }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [portalTarget, setPortalTarget] = useState(null);
+  const portalTarget = typeof document === "undefined" ? null : document.body;
 
   const pending = isSubmitting || isPending;
-
-  useEffect(() => {
-    setPortalTarget(document.body);
-  }, []);
 
   return (
     <form ref={formRef} action={deleteProjectAction}>
