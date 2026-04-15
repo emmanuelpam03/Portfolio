@@ -105,12 +105,6 @@ const relativeOrHttpUrlSchema = z
     "Enter a valid URL (https://...) or a path like /resume.pdf",
   );
 
-const techTagSchema = z
-  .string()
-  .trim()
-  .min(1, "Tag cannot be empty")
-  .max(40, "Tag must not exceed 40 characters");
-
 export const settingsUpdateSchema = z.object({
   display_name: z.string().trim().min(1, "Display name is required").max(120),
   location: z.string().trim().min(1, "Location is required").max(120),
@@ -145,5 +139,4 @@ export const settingsUpdateSchema = z.object({
     .nullable(),
 
   cv_url: relativeOrHttpUrlSchema.optional().nullable(),
-  tech_tags: z.array(techTagSchema).max(16).default([]),
 });

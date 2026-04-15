@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS site_settings (
   linkedin_url   text,
 
   cv_url         text,
-  tech_tags      jsonb NOT NULL DEFAULT '[]'::jsonb,
 
   created_at     timestamptz NOT NULL DEFAULT now(),
   updated_at     timestamptz NOT NULL DEFAULT now(),
@@ -31,16 +30,15 @@ CREATE TABLE IF NOT EXISTS site_settings (
     (github_url IS NULL OR length(github_url) <= 2048) AND
     (linkedin_url IS NULL OR length(linkedin_url) <= 2048) AND
     (cv_url IS NULL OR length(cv_url) <= 2048)
-  ),
-
-  -- Keep it simple + aligned with UI limits (16 tags max).
-  CONSTRAINT site_settings_tech_tags_valid_chk CHECK (
-    CASE
-      WHEN jsonb_typeof(tech_tags) = 'array' THEN jsonb_array_length(tech_tags) <= 16
-      ELSE FALSE
-    END
   )
 );
+
+-- Cleanup from older versions (tech tags were removed)
+ALTER TABLE site_settings
+  DROP CONSTRAINT IF EXISTS site_settings_tech_tags_valid_chk;
+
+ALTER TABLE site_settings
+  DROP COLUMN IF EXISTS tech_tags;
 
 -- Auto-update updated_at on edits (unique function name to avoid collisions).
 CREATE OR REPLACE FUNCTION site_settings_set_updated_at()
@@ -67,8 +65,7 @@ INSERT INTO site_settings (
   hero_bio,
   github_url,
   linkedin_url,
-  cv_url,
-  tech_tags
+  cv_url
 )
 VALUES (
   'default',
@@ -79,7 +76,6 @@ VALUES (
   'I design, build, and ship full-stack products: responsive UI, secure backends, and scalable data — with React/Next.js.',
   'https://github.com/emmanuelpam03',
   NULL,
-  '/sample-resume.pdf',
-  '["React","Next.js","TypeScript","Tailwind"]'::jsonb
+  '/sample-resume.pdf'
 )
 ON CONFLICT (singleton_key) DO NOTHING;

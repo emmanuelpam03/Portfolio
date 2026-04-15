@@ -14,7 +14,6 @@ const FALLBACK_SETTINGS = {
   hero_bio:
     "I design, build, and ship full-stack products: responsive UI, secure backends, and scalable data — with React/Next.js.",
   cv_url: "/sample-resume.pdf",
-  tech_tags: ["React", "Next.js", "TypeScript", "Tailwind"],
 };
 
 const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
@@ -56,25 +55,8 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
       : ""
     : FALLBACK_SETTINGS.cv_url;
 
-  const normalizedTechTags = (() => {
-    if (!hasSettings) return FALLBACK_SETTINGS.tech_tags;
-
-    const list = Array.isArray(settings?.tech_tags) ? settings.tech_tags : [];
-    const seen = new Set();
-    const next = [];
-
-    for (const item of list) {
-      const text = String(item ?? "").trim();
-      if (!text) continue;
-      const key = text.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      next.push(text);
-      if (next.length >= 16) break;
-    }
-
-    return next;
-  })();
+  const shouldUseApiCvDownload = hasSettings && Boolean(cvHref);
+  const cvDownloadHref = shouldUseApiCvDownload ? "/api/cv" : cvHref;
 
   const headlineParts = headlineText.split(/\s+/).filter(Boolean);
   const headlinePrimary = headlineParts[0] ?? "";
@@ -219,8 +201,8 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
               <motion.a
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                href={cvHref}
-                download={Boolean(cvHref && cvHref.startsWith("/"))}
+                href={cvDownloadHref}
+                download={Boolean(!shouldUseApiCvDownload && cvDownloadHref)}
                 className="px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 flex items-center gap-2 font-medium hover:border-purple-500 hover:bg-gray-50 transition-all duration-300 shadow-md text-base"
               >
                 <Download className="w-4 h-4" aria-hidden="true" />
@@ -264,14 +246,7 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
                     </motion.div>
                   </motion.div>
                 ))
-              : normalizedTechTags.map((tech) => (
-                  <span
-                    key={tech}
-                    className="px-3 py-1.5 bg-gradient-to-r from-blue-50 to-purple-50 text-gray-700 rounded-full text-sm font-medium border border-gray-200"
-                  >
-                    {tech}
-                  </span>
-                ))}
+              : null}
           </motion.div>
         </div>
 

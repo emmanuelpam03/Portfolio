@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { useActionState, useRef, useState } from "react";
 
 import { updateSettingsAction } from "@/app/actions/settingsActions";
 
@@ -22,23 +21,6 @@ function truncateMiddle(value, maxLength = 44) {
   if (value.length <= maxLength) return value;
   const keep = Math.max(10, Math.floor((maxLength - 3) / 2));
   return `${value.slice(0, keep)}...${value.slice(-keep)}`;
-}
-
-function normalizeInitialTags(initialSettings) {
-  if (!initialSettings) {
-    return ["React", "Next.js", "TypeScript", "Tailwind"];
-  }
-
-  const tags = Array.isArray(initialSettings?.tech_tags)
-    ? initialSettings.tech_tags
-    : [];
-
-  const normalized = tags
-    .map((tag) => String(tag ?? "").trim())
-    .filter(Boolean)
-    .slice(0, 16);
-
-  return normalized;
 }
 
 function normalizeInitialCvUrl(initialSettings) {
@@ -113,11 +95,6 @@ export default function AdminSettingsForm({ initialSettings, setupMessage }) {
     initialState,
   );
 
-  const [techTags, setTechTags] = useState(() =>
-    normalizeInitialTags(initialSettings),
-  );
-  const [newTag, setNewTag] = useState("");
-
   const [cvUrl, setCvUrl] = useState(() =>
     normalizeInitialCvUrl(initialSettings),
   );
@@ -131,40 +108,8 @@ export default function AdminSettingsForm({ initialSettings, setupMessage }) {
   const readyForDbWrites = !setupMessage;
   const errors = state?.errors ?? {};
 
-  const techTagsJson = useMemo(() => JSON.stringify(techTags), [techTags]);
-
   const isUploadingCv = cvUpload.status === "uploading";
   const isBusy = isPending || isUploadingCv;
-
-  function addTag() {
-    const value = String(newTag ?? "").trim();
-    if (!value) return;
-
-    const key = value.toLowerCase();
-    const existing = techTags.some((tag) => String(tag).toLowerCase() === key);
-    if (existing) {
-      setNewTag("");
-      return;
-    }
-
-    setTechTags((prev) => {
-      const next = Array.isArray(prev) ? [...prev] : [];
-      if (next.length >= 16) return next;
-      next.push(value);
-      return next;
-    });
-
-    setNewTag("");
-  }
-
-  function removeTag(tagToRemove) {
-    const key = String(tagToRemove ?? "").toLowerCase();
-    setTechTags((prev) =>
-      (Array.isArray(prev) ? prev : []).filter(
-        (tag) => String(tag).toLowerCase() !== key,
-      ),
-    );
-  }
 
   function viewCv() {
     const href = String(cvUrl ?? "").trim();
@@ -259,141 +204,75 @@ export default function AdminSettingsForm({ initialSettings, setupMessage }) {
           )}
         </div>
       )}
-
-      <input type="hidden" name="tech_tags_json" value={techTagsJson} />
       <input type="hidden" name="cv_url" value={cvUrl} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-5">
-        <div className="lg:col-span-2 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-1">CV</h3>
-          <p className="text-base text-gray-700 Ovo mb-5">
-            Upload/replace your resume file.
-          </p>
+      <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6 mb-5">
+        <h3 className="text-lg font-bold text-gray-900 mb-1">CV</h3>
+        <p className="text-base text-gray-700 Ovo mb-5">
+          Upload/replace your resume file.
+        </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="rounded-2xl border border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 p-5">
-              <p className="text-base font-medium text-gray-800 Ovo">
-                Current file
-              </p>
-              <p className="text-sm text-gray-600 Ovo mt-1">
-                {hasCv ? truncateMiddle(cvUrl) : "No file connected yet."}
-              </p>
-              <div className="mt-4 flex gap-2">
-                <button
-                  type="button"
-                  onClick={viewCv}
-                  disabled={!hasCv}
-                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  View
-                </button>
-                <button
-                  type="button"
-                  onClick={removeCv}
-                  disabled={!hasCv || isBusy}
-                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-red-600 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-gray-200 bg-white p-5">
-              <label
-                htmlFor="cv-upload"
-                className="block text-sm font-medium text-gray-700 Ovo mb-2"
-              >
-                Upload new CV
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                name="cv"
-                id="cv-upload"
-                accept=".pdf,.doc,.docx"
-                onChange={onCvFileChange}
-                disabled={!readyForDbWrites || isBusy}
-                className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
-              />
-              <p className="text-sm text-gray-600 Ovo mt-2">
-                Recommended: PDF.
-              </p>
-              {cvUpload.message ? (
-                <p
-                  className={`mt-2 text-sm Ovo ${
-                    cvUpload.status === "error"
-                      ? "text-red-600"
-                      : cvUpload.status === "success"
-                        ? "text-green-700"
-                        : "text-gray-700"
-                  }`}
-                  role="status"
-                  aria-live="polite"
-                >
-                  {cvUpload.message}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-1">Tech tags</h3>
-          <p className="text-base text-gray-700 Ovo mb-5">
-            Edit the pill tags shown on the homepage.
-          </p>
-
-          <div className="flex flex-wrap gap-2 mb-4">
-            {techTags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 text-sm text-gray-800"
-              >
-                <span className="Ovo">{tag}</span>
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag)}
-                  disabled={isBusy}
-                  className="text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label={`Remove ${tag}`}
-                >
-                  <X className="w-4 h-4" aria-hidden="true" />
-                </button>
-              </span>
-            ))}
-          </div>
-
-          {Array.isArray(errors?.tech_tags) && errors.tech_tags.length > 0 && (
-            <p className="-mt-2 mb-3 text-sm text-red-600 Ovo">
-              {errors.tech_tags[0]}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="rounded-2xl border border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 p-5">
+            <p className="text-base font-medium text-gray-800 Ovo">
+              Current file
             </p>
-          )}
+            <p className="text-sm text-gray-600 Ovo mt-1">
+              {hasCv ? truncateMiddle(cvUrl) : "No file connected yet."}
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={viewCv}
+                disabled={!hasCv}
+                className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                View
+              </button>
+              <button
+                type="button"
+                onClick={removeCv}
+                disabled={!hasCv || isBusy}
+                className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-red-600 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 gap-3">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5">
+            <label
+              htmlFor="cv-upload"
+              className="block text-sm font-medium text-gray-700 Ovo mb-2"
+            >
+              Upload new CV
+            </label>
             <input
-              type="text"
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addTag();
-                }
-              }}
-              name="newTag"
-              placeholder="Add a tag (e.g. PostgreSQL)"
-              aria-label="New tag name"
+              ref={fileInputRef}
+              type="file"
+              name="cv"
+              id="cv-upload"
+              accept=".pdf,.doc,.docx"
+              onChange={onCvFileChange}
               disabled={!readyForDbWrites || isBusy}
               className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
             />
-            <button
-              type="button"
-              onClick={addTag}
-              disabled={!readyForDbWrites || isBusy}
-              className="w-full px-5 py-3 rounded-full border border-gray-200 bg-white text-gray-700 text-base font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Add tag
-            </button>
+            <p className="text-sm text-gray-600 Ovo mt-2">Recommended: PDF.</p>
+            {cvUpload.message ? (
+              <p
+                className={`mt-2 text-sm Ovo ${
+                  cvUpload.status === "error"
+                    ? "text-red-600"
+                    : cvUpload.status === "success"
+                      ? "text-green-700"
+                      : "text-gray-700"
+                }`}
+                role="status"
+                aria-live="polite"
+              >
+                {cvUpload.message}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>

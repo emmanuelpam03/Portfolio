@@ -38,43 +38,6 @@ function validationErrorState(raw, parsed) {
   };
 }
 
-function safeTechTagsFromJson(value) {
-  const raw = String(value ?? "[]");
-  let parsed;
-
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    throw new Error("Invalid tech tags JSON");
-  }
-
-  if (!Array.isArray(parsed)) {
-    throw new Error("Invalid tech tags JSON");
-  }
-
-  return parsed;
-}
-
-function normalizeTechTags(tags) {
-  const seen = new Set();
-  const next = [];
-
-  for (const item of Array.isArray(tags) ? tags : []) {
-    const text = String(item ?? "").trim();
-    if (!text) continue;
-
-    const key = text.toLowerCase();
-    if (seen.has(key)) continue;
-
-    seen.add(key);
-    next.push(text);
-
-    if (next.length >= 16) break;
-  }
-
-  return next;
-}
-
 async function loadSettingsRow() {
   const rows = await sql`
     SELECT
@@ -85,8 +48,7 @@ async function loadSettingsRow() {
       hero_bio,
       github_url,
       linkedin_url,
-      cv_url,
-      tech_tags
+      cv_url
     FROM site_settings
     WHERE singleton_key = 'default'
     LIMIT 1
@@ -96,20 +58,6 @@ async function loadSettingsRow() {
 }
 
 function normalizeSettingsRow(row) {
-  let techTags = [];
-  const rawTags = row?.tech_tags;
-
-  if (Array.isArray(rawTags)) {
-    techTags = rawTags;
-  } else if (typeof rawTags === "string" && rawTags.trim()) {
-    try {
-      const parsed = JSON.parse(rawTags);
-      if (Array.isArray(parsed)) techTags = parsed;
-    } catch {
-      techTags = [];
-    }
-  }
-
   return {
     display_name: row?.display_name ? String(row.display_name) : "",
     location: row?.location ? String(row.location) : "",
@@ -122,7 +70,6 @@ function normalizeSettingsRow(row) {
     linkedin_url: row?.linkedin_url ? String(row.linkedin_url) : null,
 
     cv_url: row?.cv_url ? String(row.cv_url) : null,
-    tech_tags: normalizeTechTags(techTags),
   };
 }
 
@@ -167,34 +114,19 @@ export async function getSettingsAdmin() {
 export async function updateSettingsAction(_prevState, formData) {
   await requireAdmin();
 
-  let raw;
-  try {
-    const tags = normalizeTechTags(
-      safeTechTagsFromJson(formData.get("tech_tags_json")),
-    );
+  const raw = {
+    display_name: String(formData.get("display_name") ?? ""),
+    location: String(formData.get("location") ?? ""),
+    public_email: String(formData.get("public_email") ?? ""),
 
-    raw = {
-      display_name: String(formData.get("display_name") ?? ""),
-      location: String(formData.get("location") ?? ""),
-      public_email: String(formData.get("public_email") ?? ""),
+    hero_headline: String(formData.get("hero_headline") ?? ""),
+    hero_bio: String(formData.get("hero_bio") ?? ""),
 
-      hero_headline: String(formData.get("hero_headline") ?? ""),
-      hero_bio: String(formData.get("hero_bio") ?? ""),
+    github_url: trimOrNull(formData.get("github_url")),
+    linkedin_url: trimOrNull(formData.get("linkedin_url")),
 
-      github_url: trimOrNull(formData.get("github_url")),
-      linkedin_url: trimOrNull(formData.get("linkedin_url")),
-
-      cv_url: trimOrNull(formData.get("cv_url")),
-      tech_tags: tags,
-    };
-  } catch (error) {
-    return {
-      ok: false,
-      message: error instanceof Error ? error.message : "Invalid form data.",
-      errors: {},
-      fields: {},
-    };
-  }
+    cv_url: trimOrNull(formData.get("cv_url")),
+  };
 
   const parsed = settingsUpdateSchema.safeParse(raw);
   if (!parsed.success) return validationErrorState(raw, parsed);
@@ -212,8 +144,7 @@ export async function updateSettingsAction(_prevState, formData) {
         hero_bio,
         github_url,
         linkedin_url,
-        cv_url,
-        tech_tags
+        cv_url
       )
       VALUES (
         'default',
@@ -224,8 +155,7 @@ export async function updateSettingsAction(_prevState, formData) {
         ${data.hero_bio},
         ${data.github_url ?? null},
         ${data.linkedin_url ?? null},
-        ${data.cv_url ?? null},
-        ${JSON.stringify(data.tech_tags)}::jsonb
+        ${data.cv_url ?? null}
       )
       ON CONFLICT (singleton_key) DO UPDATE
       SET
@@ -236,8 +166,7 @@ export async function updateSettingsAction(_prevState, formData) {
         hero_bio = EXCLUDED.hero_bio,
         github_url = EXCLUDED.github_url,
         linkedin_url = EXCLUDED.linkedin_url,
-        cv_url = EXCLUDED.cv_url,
-        tech_tags = EXCLUDED.tech_tags
+        cv_url = EXCLUDED.cv_url
     `;
   } catch (error) {
     const setupMessage = setupMessageFromError(error);

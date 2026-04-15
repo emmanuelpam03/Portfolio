@@ -120,11 +120,6 @@ const Work = () => {
                     />
                   </Link>
                 </div>
-
-                {/* Tech tags - Optional if you have tech data */}
-                <div className="flex gap-2 mt-3 flex-wrap">
-                  {/* You can add tech stack tags here if available in your data */}
-                </div>
               </div>
             </div>
 
