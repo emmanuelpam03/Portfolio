@@ -67,10 +67,13 @@ async function loadEnvFile(envPath) {
   let content;
   try {
     content = await fs.readFile(fullPath, "utf8");
-  } catch {
+  } catch (err) {
+    if (err.code === "ENOENT") return; // File not found is OK
+    console.warn(
+      `Warning: Could not read env file ${fullPath}: ${err.message}`,
+    );
     return;
   }
-
   for (const rawLine of content.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line.length) continue;

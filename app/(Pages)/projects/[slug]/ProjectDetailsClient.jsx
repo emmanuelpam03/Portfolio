@@ -36,6 +36,27 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
     }))
     .filter((item) => Boolean(item.url));
 
+  // URL validation helper at component level or in a utils file
+  const isValidHttpUrl = (string) => {
+    try {
+      const url = new URL(string);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
+  // Helper to validate safe URL schemes
+  const isSafeExternalUrl = (url) => {
+    if (!url) return false;
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <main className="relative w-full min-h-screen pt-28 pb-20 bg-gradient-to-b from-white via-blue-50/20 to-purple-50/30 overflow-hidden">
       {/* Background decorative elements */}
@@ -108,10 +129,14 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
               transition={{ duration: 0.7, delay: 0.12 }}
               className="relative overflow-hidden rounded-3xl border border-gray-200 shadow-2xl"
             >
-              <div
-                className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${heroImageUrl})` }}
-              />
+              {heroImageUrl && isValidHttpUrl(heroImageUrl) && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url("${heroImageUrl.replace(/["\\]/g, "")}")`,
+                  }}
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
 
               <div className="relative p-7 sm:p-10 lg:p-12 min-h-[320px] sm:min-h-[420px] flex flex-col justify-end">
@@ -204,7 +229,7 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
 
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-gray-500 Ovo">GitHub</span>
-                    {projectGithubUrl ? (
+                    {isSafeExternalUrl(projectGithubUrl) ? (
                       <Link
                         href={projectGithubUrl}
                         target="_blank"
@@ -220,7 +245,7 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
 
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-gray-500 Ovo">Live</span>
-                    {projectLiveUrl ? (
+                    {isSafeExternalUrl(projectLiveUrl) ? (
                       <Link
                         href={projectLiveUrl}
                         target="_blank"

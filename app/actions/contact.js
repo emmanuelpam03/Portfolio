@@ -50,10 +50,13 @@ export async function submitContact(prevState, formData) {
   const resendFrom = trimOrNull(process.env.RESEND_FROM);
 
   if (!resendApiKey || !resendFrom) {
+    console.error(
+      "Contact form misconfigured: missing RESEND_API_KEY or RESEND_FROM",
+    );
     return {
       success: false,
       message:
-        "Contact form is not configured yet. Set RESEND_API_KEY and RESEND_FROM.",
+        "Contact form is temporarily unavailable. Please try again later.",
       fields: raw,
       errors: {},
     };

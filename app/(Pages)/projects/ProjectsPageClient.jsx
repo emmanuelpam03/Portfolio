@@ -113,7 +113,7 @@ export default function ProjectsPageClient({ projects = [] }) {
 
             return (
               <motion.div
-                key={project?.id ?? slug ?? `${project?.title}-${index}`}
+                key={project?.id || slug || `project-${index}`}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
