@@ -75,13 +75,50 @@ export async function submitContact(prevState, formData) {
 
   const resend = new Resend(resendApiKey);
 
+  const safeName = String(parsed.data.name)
+    .replace(/[\r\n]+/g, " ")
+    .trim();
+  const subjectName = safeName.length ? safeName : "New message";
+  const from = resendFrom.includes("<")
+    ? resendFrom
+    : `Portfolio <${resendFrom}>`;
+
   try {
-    await resend.emails.send({
-      from: resendFrom,
+    const result = await resend.emails.send({
+      from,
       to: toEmail,
-      subject: `Portfolio contact: ${parsed.data.name}`,
+      replyTo: parsed.data.email,
+      subject: `Portfolio contact: ${subjectName}`,
       text: `New message from your portfolio contact form\n\nName: ${parsed.data.name}\nEmail: ${parsed.data.email}\n\nMessage:\n${parsed.data.message}`,
     });
+
+    if (result?.error) {
+      console.error("Resend rejected contact email", result.error);
+      return {
+        success: false,
+        message:
+          "Unable to send your message right now. Please try again in a moment.",
+        fields: raw,
+        errors: {},
+      };
+    }
+
+    const messageId =
+      typeof result?.data?.id === "string" ? result.data.id : null;
+    if (!messageId) {
+      console.error("Resend returned no message id", result);
+      return {
+        success: false,
+        message:
+          "Unable to send your message right now. Please try again in a moment.",
+        fields: raw,
+        errors: {},
+      };
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      console.log("Contact email sent", { id: messageId, to: toEmail });
+    }
   } catch (error) {
     console.error("Failed to send contact email", error);
     return {

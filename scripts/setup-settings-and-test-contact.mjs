@@ -323,8 +323,12 @@ async function getCurrentPublicEmail(sql) {
 async function sendTestContactEmail({ resendApiKey, resendFrom, to }) {
   const resend = new Resend(resendApiKey);
 
+  const from = resendFrom.includes("<")
+    ? resendFrom
+    : `Portfolio <${resendFrom}>`;
+
   return resend.emails.send({
-    from: resendFrom,
+    from,
     to,
     subject: "Portfolio contact test (DB-managed)",
     text: "This is an automated test email to confirm the portfolio contact form destination is DB-managed via site_settings.public_email.",
@@ -374,8 +378,21 @@ async function main() {
       to: currentEmail,
     });
 
+    if (result?.error) {
+      console.error("Resend rejected test email", result.error);
+      process.exitCode = 1;
+      return;
+    }
+
     const id = typeof result?.data?.id === "string" ? result.data.id : null;
-    console.log(`Resend accepted email${id ? ` (id: ${id})` : ""}.`);
+
+    if (!id) {
+      console.error("Resend returned no message id", result);
+      process.exitCode = 1;
+      return;
+    }
+
+    console.log(`Resend accepted email (id: ${id}).`);
   }
 }
 
