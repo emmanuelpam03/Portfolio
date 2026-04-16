@@ -632,5 +632,5 @@ export async function deleteProjectAction(formData) {
   revalidatePath(`/projects/${slug}`);
   revalidatePath("/admin/projects");
 
-  redirect("/admin/projects");
+  redirect("/admin/projects?deleted=1");
 }

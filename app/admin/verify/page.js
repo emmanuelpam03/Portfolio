@@ -1,14 +1,22 @@
 import Link from "next/link";
 
+import ToastOnMount from "@/app/components/ToastOnMount";
+
 export const metadata = {
   title: "Verifying… | Admin",
 };
 
 export default async function AdminVerifyPage({ searchParams }) {
-  const error = (await searchParams)?.error;
+  const error =
+    typeof searchParams?.error === "string" ? searchParams.error : null;
+  const toastMessage = error ? String(error).trim() : null;
 
   return (
     <div className="max-w-xl mx-auto">
+      {toastMessage ? (
+        <ToastOnMount variant="error" message={toastMessage} />
+      ) : null}
+
       <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-2xl p-7 sm:p-10">
         <h2 className="text-2xl sm:text-3xl font-bold Ovo bg-gradient-to-r from-gray-900 via-blue-800 to-purple-700 bg-clip-text text-transparent mb-3">
           {error ? "Link invalid" : "Verifying…"}

@@ -5,7 +5,8 @@ import { findPublishedProjectBySlug } from "@/app/actions/projectsActions";
 export const dynamic = "force-dynamic";
 
 export default async function ProjectDetailsPage({ params }) {
-  const slug = params?.slug ? String(params.slug) : "";
+  const resolvedParams = await params;
+  const slug = resolvedParams?.slug ? String(resolvedParams.slug) : "";
 
   const project = slug
     ? await findPublishedProjectBySlug(slug).catch((error) => {

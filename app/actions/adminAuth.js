@@ -163,7 +163,7 @@ export async function logoutAdmin() {
   });
 
   if (!token) {
-    redirect("/admin/login");
+    redirect("/admin/login?logged_out=1");
   }
 
   const tokenHash = sha256Base64Url(token);
@@ -172,5 +172,5 @@ export async function logoutAdmin() {
     WHERE session_hash = ${tokenHash};
   `;
 
-  redirect("/admin/login");
+  redirect("/admin/login?logged_out=1");
 }

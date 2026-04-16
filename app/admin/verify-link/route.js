@@ -15,6 +15,7 @@ export async function GET(request) {
   }
 
   const url = new URL("/admin", request.url);
+  url.searchParams.set("signed_in", "1");
   const response = NextResponse.redirect(url);
 
   const expires = new Date(result.session.expiresAt);

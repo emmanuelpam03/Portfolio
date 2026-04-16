@@ -11,7 +11,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { createPortal } from "react-dom";
 
 const ToastContext = createContext(null);
 
@@ -52,8 +51,6 @@ const VARIANT_STYLES = {
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const timeoutsRef = useRef(new Map());
-
-  const portalTarget = typeof document === "undefined" ? null : document.body;
 
   useEffect(() => {
     const timeouts = timeoutsRef.current;
@@ -121,62 +118,56 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={api}>
       {children}
-      {portalTarget
-        ? createPortal(
-            <div
-              className="pointer-events-none fixed right-4 top-4 flex w-[min(92vw,420px)] flex-col gap-3"
-              style={{ zIndex: 2147483000 }}
-              aria-live="polite"
-              aria-relevant="additions"
-            >
-              <AnimatePresence initial={false}>
-                {toasts.map((toast) => {
-                  const styles =
-                    VARIANT_STYLES[toast.variant] ?? VARIANT_STYLES.info;
-                  const Icon = styles.icon;
+      <div
+        className="pointer-events-none fixed right-4 top-4 flex w-[min(92vw,420px)] flex-col gap-3"
+        style={{ zIndex: 2147483000 }}
+        aria-live="polite"
+        aria-relevant="additions"
+      >
+        <AnimatePresence initial={false}>
+          {toasts.map((toast) => {
+            const styles = VARIANT_STYLES[toast.variant] ?? VARIANT_STYLES.info;
+            const Icon = styles.icon;
 
-                  return (
-                    <motion.div
-                      key={toast.id}
-                      initial={{ opacity: 0, x: 24, y: -6 }}
-                      animate={{ opacity: 1, x: 0, y: 0 }}
-                      exit={{ opacity: 0, x: 24, y: -6 }}
-                      transition={{ duration: 0.22 }}
-                      layout
-                      className={`pointer-events-auto overflow-hidden rounded-2xl border bg-white/95 shadow-xl backdrop-blur-xl ${styles.border}`}
-                      role={toast.variant === "error" ? "alert" : "status"}
-                    >
-                      <div className="flex items-start gap-3 p-4">
-                        <span
-                          className={`mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-xl text-white ${styles.iconBg}`}
-                          aria-hidden="true"
-                        >
-                          <Icon className="h-4 w-4" aria-hidden="true" />
-                        </span>
+            return (
+              <motion.div
+                key={toast.id}
+                initial={{ opacity: 0, x: 24, y: -6 }}
+                animate={{ opacity: 1, x: 0, y: 0 }}
+                exit={{ opacity: 0, x: 24, y: -6 }}
+                transition={{ duration: 0.22 }}
+                layout
+                className={`pointer-events-auto overflow-hidden rounded-2xl border bg-white/95 shadow-xl backdrop-blur-xl ${styles.border}`}
+                role={toast.variant === "error" ? "alert" : "status"}
+              >
+                <div className="flex items-start gap-3 p-4">
+                  <span
+                    className={`mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-xl text-white ${styles.iconBg}`}
+                    aria-hidden="true"
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                  </span>
 
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm text-gray-800 Ovo break-words">
-                            {toast.message}
-                          </p>
-                        </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-gray-800 Ovo break-words">
+                      {toast.message}
+                    </p>
+                  </div>
 
-                        <button
-                          type="button"
-                          onClick={() => removeToast(toast.id)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-                          aria-label="Dismiss notification"
-                        >
-                          <X className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>,
-            portalTarget,
-          )
-        : null}
+                  <button
+                    type="button"
+                    onClick={() => removeToast(toast.id)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                    aria-label="Dismiss notification"
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
     </ToastContext.Provider>
   );
 }

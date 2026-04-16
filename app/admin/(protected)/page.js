@@ -17,6 +17,7 @@ import {
   User,
 } from "lucide-react";
 
+import ToastOnMount from "@/app/components/ToastOnMount";
 import { sql } from "@/app/lib/db";
 import { requireAdmin } from "@/app/lib/adminSession";
 
@@ -114,6 +115,8 @@ async function getDashboardTableFlags() {
       to_regclass('public.media_assets') IS NOT NULL AS media_assets,
       to_regclass('public.about_content') IS NOT NULL AS about_content,
       to_regclass('public.about_cards') IS NOT NULL AS about_cards,
+      to_regclass('public.about_tools') IS NOT NULL AS about_tools,
+      to_regclass('public.hero_languages') IS NOT NULL AS hero_languages,
       to_regclass('public.services_content') IS NOT NULL AS services_content,
       to_regclass('public.services') IS NOT NULL AS services,
       to_regclass('public.site_settings') IS NOT NULL AS site_settings
@@ -127,6 +130,8 @@ async function getDashboardTableFlags() {
     media_assets: Boolean(row.media_assets),
     about_content: Boolean(row.about_content),
     about_cards: Boolean(row.about_cards),
+    about_tools: Boolean(row.about_tools),
+    hero_languages: Boolean(row.hero_languages),
     services_content: Boolean(row.services_content),
     services: Boolean(row.services),
     site_settings: Boolean(row.site_settings),
@@ -174,11 +179,48 @@ async function loadDashboardViewModel() {
       ],
       recentActivity: [],
       needsAttention: [
-        { title: "Projects missing cover image", value: "—" },
-        { title: "Projects missing live URL", value: "—" },
-        { title: "Projects missing GitHub URL", value: "—" },
-        { title: "Projects missing description", value: "—" },
+        {
+          title: "Published projects missing cover image",
+          value: "—",
+          href: "/admin/projects",
+        },
+        {
+          title: "Published projects missing live URL",
+          value: "—",
+          href: "/admin/projects",
+        },
+        {
+          title: "Published projects missing GitHub URL",
+          value: "—",
+          href: "/admin/projects",
+        },
+        {
+          title: "Published projects missing description",
+          value: "—",
+          href: "/admin/projects",
+        },
+        {
+          title: "Services enabled but no active cards",
+          value: "—",
+          href: "/admin/services",
+        },
+        {
+          title: "Contact form missing destination email",
+          value: "—",
+          href: "/admin/settings",
+        },
+        {
+          title: "About tools list is empty",
+          value: "—",
+          href: "/admin/about",
+        },
+        {
+          title: "Header languages list is empty",
+          value: "—",
+          href: "/admin/about",
+        },
       ],
+      projectAttentionExamples: [],
       setupMessage:
         "Unable to connect to the database. Check DATABASE_URL and your Neon connection.",
     };
@@ -199,7 +241,12 @@ async function loadDashboardViewModel() {
       "Media library table is missing. Apply app/lib/media.sql to your database.",
     );
   }
-  if (!tables.about_content) {
+  if (
+    !tables.about_content ||
+    !tables.about_cards ||
+    !tables.about_tools ||
+    !tables.hero_languages
+  ) {
     setupMessages.push(
       "About tables are missing. Apply app/lib/about.sql to your database.",
     );
@@ -217,9 +264,12 @@ async function loadDashboardViewModel() {
 
   const [
     projectStatsRows,
+    projectAttentionRows,
     mediaStatsRows,
     aboutContentRows,
     aboutCardsRows,
+    aboutToolsRows,
+    heroLanguagesRows,
     servicesContentRows,
     servicesRows,
     settingsRows,
@@ -230,13 +280,43 @@ async function loadDashboardViewModel() {
           SELECT
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE is_published = false) AS drafts,
+            COUNT(*) FILTER (WHERE is_published = true) AS published,
             COUNT(*) FILTER (WHERE is_published = true AND is_featured = true) AS featured,
-            COUNT(*) FILTER (WHERE NULLIF(BTRIM(hero_image_url), '') IS NULL) AS missing_cover,
-            COUNT(*) FILTER (WHERE NULLIF(BTRIM(project_live_url), '') IS NULL) AS missing_live,
-            COUNT(*) FILTER (WHERE NULLIF(BTRIM(project_github_url), '') IS NULL) AS missing_github,
-            COUNT(*) FILTER (WHERE NULLIF(BTRIM(description), '') IS NULL) AS missing_description,
+            COUNT(*) FILTER (
+              WHERE is_published = true AND NULLIF(BTRIM(hero_image_url), '') IS NULL
+            ) AS missing_cover_published,
+            COUNT(*) FILTER (
+              WHERE is_published = true AND NULLIF(BTRIM(project_live_url), '') IS NULL
+            ) AS missing_live_published,
+            COUNT(*) FILTER (
+              WHERE is_published = true AND NULLIF(BTRIM(project_github_url), '') IS NULL
+            ) AS missing_github_published,
+            COUNT(*) FILTER (
+              WHERE is_published = true AND NULLIF(BTRIM(description), '') IS NULL
+            ) AS missing_description_published,
             MAX(updated_at) AS last_project_update_at
           FROM projects
+        `
+      : Promise.resolve([]),
+    tables.projects
+      ? sql`
+          SELECT
+            slug,
+            title,
+            (NULLIF(BTRIM(hero_image_url), '') IS NULL) AS missing_cover,
+            (NULLIF(BTRIM(project_live_url), '') IS NULL) AS missing_live,
+            (NULLIF(BTRIM(project_github_url), '') IS NULL) AS missing_github,
+            (NULLIF(BTRIM(description), '') IS NULL) AS missing_description
+          FROM projects
+          WHERE is_published = true
+            AND (
+              NULLIF(BTRIM(hero_image_url), '') IS NULL OR
+              NULLIF(BTRIM(project_live_url), '') IS NULL OR
+              NULLIF(BTRIM(project_github_url), '') IS NULL OR
+              NULLIF(BTRIM(description), '') IS NULL
+            )
+          ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
+          LIMIT 5
         `
       : Promise.resolve([]),
     tables.media_assets
@@ -249,8 +329,12 @@ async function loadDashboardViewModel() {
       : Promise.resolve([]),
     tables.about_content
       ? sql`
-          SELECT MAX(updated_at) AS updated_at
+          SELECT
+            NULLIF(BTRIM(about_text), '') AS about_text,
+            updated_at
           FROM about_content
+          WHERE singleton_key = 'default'
+          LIMIT 1
         `
       : Promise.resolve([]),
     tables.about_cards
@@ -259,22 +343,54 @@ async function loadDashboardViewModel() {
           FROM about_cards
         `
       : Promise.resolve([]),
+    tables.about_tools
+      ? sql`
+          SELECT COUNT(*) AS total
+          FROM about_tools
+          WHERE about_key = 'default'
+        `
+      : Promise.resolve([]),
+    tables.hero_languages
+      ? sql`
+          SELECT COUNT(*) AS total
+          FROM hero_languages
+          WHERE about_key = 'default'
+        `
+      : Promise.resolve([]),
     tables.services_content
       ? sql`
-          SELECT MAX(updated_at) AS updated_at
+          SELECT
+            is_enabled,
+            updated_at
           FROM services_content
+          WHERE singleton_key = 'default'
+          LIMIT 1
         `
       : Promise.resolve([]),
     tables.services
       ? sql`
-          SELECT MAX(updated_at) AS updated_at
+          SELECT
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE is_active = true) AS active,
+            COUNT(*) FILTER (
+              WHERE
+                is_active = true
+                AND NULLIF(BTRIM(title), '') IS NOT NULL
+                AND NULLIF(BTRIM(description), '') IS NOT NULL
+            ) AS active_complete,
+            MAX(updated_at) AS updated_at
           FROM services
         `
       : Promise.resolve([]),
     tables.site_settings
       ? sql`
-          SELECT MAX(updated_at) AS updated_at
+          SELECT
+            NULLIF(BTRIM(public_email), '') AS public_email,
+            NULLIF(BTRIM(cv_url), '') AS cv_url,
+            updated_at
           FROM site_settings
+          WHERE singleton_key = 'default'
+          LIMIT 1
         `
       : Promise.resolve([]),
     tables.admin_sessions
@@ -288,21 +404,26 @@ async function loadDashboardViewModel() {
   const projectRow = projectStatsRows?.[0] ?? null;
   const mediaRow = mediaStatsRows?.[0] ?? null;
 
+  const aboutContentRow = aboutContentRows?.[0] ?? null;
+  const servicesContentRow = servicesContentRows?.[0] ?? null;
+  const servicesRow = servicesRows?.[0] ?? null;
+  const settingsRow = settingsRows?.[0] ?? null;
+
   const projectsTotal = projectRow ? Number(projectRow.total ?? 0) : null;
   const projectsDrafts = projectRow ? Number(projectRow.drafts ?? 0) : null;
   const featuredTotal = projectRow ? Number(projectRow.featured ?? 0) : null;
 
   const projectsMissingCover = projectRow
-    ? Number(projectRow.missing_cover ?? 0)
+    ? Number(projectRow.missing_cover_published ?? 0)
     : null;
   const projectsMissingLive = projectRow
-    ? Number(projectRow.missing_live ?? 0)
+    ? Number(projectRow.missing_live_published ?? 0)
     : null;
   const projectsMissingGithub = projectRow
-    ? Number(projectRow.missing_github ?? 0)
+    ? Number(projectRow.missing_github_published ?? 0)
     : null;
   const projectsMissingDescription = projectRow
-    ? Number(projectRow.missing_description ?? 0)
+    ? Number(projectRow.missing_description_published ?? 0)
     : null;
 
   const lastProjectUpdateAt = projectRow?.last_project_update_at ?? null;
@@ -311,16 +432,16 @@ async function loadDashboardViewModel() {
   const lastMediaUploadAt = mediaRow?.last_upload_at ?? null;
 
   const aboutUpdatedAt = maxDate([
-    aboutContentRows?.[0]?.updated_at,
+    aboutContentRow?.updated_at,
     aboutCardsRows?.[0]?.updated_at,
   ]);
 
   const servicesUpdatedAt = maxDate([
-    servicesContentRows?.[0]?.updated_at,
-    servicesRows?.[0]?.updated_at,
+    servicesContentRow?.updated_at,
+    servicesRow?.updated_at,
   ]);
 
-  const settingsUpdatedAt = toDate(settingsRows?.[0]?.updated_at);
+  const settingsUpdatedAt = toDate(settingsRow?.updated_at);
   const lastSignInAt = toDate(signInRows?.[0]?.created_at);
 
   const lastUpdatedAt = maxDate([
@@ -362,24 +483,114 @@ async function loadDashboardViewModel() {
     },
   ];
 
+  const servicesTotal = servicesRow ? Number(servicesRow.total ?? 0) : null;
+  const servicesActiveComplete = servicesRow
+    ? Number(servicesRow.active_complete ?? 0)
+    : null;
+
+  const hasDbServicesData =
+    Boolean(servicesContentRow) || (servicesTotal != null && servicesTotal > 0);
+
+  const servicesEnabled = servicesContentRow
+    ? Boolean(servicesContentRow.is_enabled)
+    : true;
+
+  const servicesEnabledButEmpty =
+    servicesActiveComplete == null
+      ? null
+      : servicesEnabled && hasDbServicesData && servicesActiveComplete === 0
+        ? 1
+        : 0;
+
+  const settingsPublicEmailMissing = tables.site_settings
+    ? settingsRow?.public_email
+      ? 0
+      : 1
+    : null;
+
+  const aboutToolsCount = tables.about_tools
+    ? Number(aboutToolsRows?.[0]?.total ?? 0)
+    : null;
+
+  const aboutToolsEmpty = aboutContentRow
+    ? aboutToolsCount == null
+      ? null
+      : aboutToolsCount === 0
+        ? 1
+        : 0
+    : 0;
+
+  const heroLanguagesCount = tables.hero_languages
+    ? Number(heroLanguagesRows?.[0]?.total ?? 0)
+    : null;
+
+  const heroLanguagesEmpty = aboutContentRow
+    ? heroLanguagesCount == null
+      ? null
+      : heroLanguagesCount === 0
+        ? 1
+        : 0
+    : 0;
+
   const needsAttention = [
     {
-      title: "Projects missing cover image",
+      title: "Published projects missing cover image",
       value: formatCount(projectsMissingCover),
+      href: "/admin/projects",
     },
     {
-      title: "Projects missing live URL",
+      title: "Published projects missing live URL",
       value: formatCount(projectsMissingLive),
+      href: "/admin/projects",
     },
     {
-      title: "Projects missing GitHub URL",
+      title: "Published projects missing GitHub URL",
       value: formatCount(projectsMissingGithub),
+      href: "/admin/projects",
     },
     {
-      title: "Projects missing description",
+      title: "Published projects missing description",
       value: formatCount(projectsMissingDescription),
+      href: "/admin/projects",
+    },
+    {
+      title: "Services enabled but no active cards",
+      value: formatCount(servicesEnabledButEmpty),
+      href: "/admin/services",
+    },
+    {
+      title: "Contact form missing destination email",
+      value: formatCount(settingsPublicEmailMissing),
+      href: "/admin/settings",
+    },
+    {
+      title: "About tools list is empty",
+      value: formatCount(aboutToolsEmpty),
+      href: "/admin/about",
+    },
+    {
+      title: "Header languages list is empty",
+      value: formatCount(heroLanguagesEmpty),
+      href: "/admin/about",
     },
   ];
+
+  const projectAttentionExamples = (
+    Array.isArray(projectAttentionRows) ? projectAttentionRows : []
+  )
+    .map((row) => {
+      const slug = row?.slug ? String(row.slug) : "";
+      const title = row?.title ? String(row.title) : slug;
+      const missing = [];
+
+      if (row?.missing_cover) missing.push("cover");
+      if (row?.missing_description) missing.push("description");
+      if (row?.missing_live) missing.push("live URL");
+      if (row?.missing_github) missing.push("GitHub URL");
+
+      return { slug, title, missing };
+    })
+    .filter((item) => item.slug && item.missing.length);
 
   const activityCandidates = [
     {
@@ -426,11 +637,20 @@ async function loadDashboardViewModel() {
 
   const setupMessage = setupMessages.length ? setupMessages.join(" ") : null;
 
-  return { snapshot, recentActivity, needsAttention, setupMessage };
+  return {
+    snapshot,
+    recentActivity,
+    needsAttention,
+    projectAttentionExamples,
+    setupMessage,
+  };
 }
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({ searchParams }) {
   await requireAdmin();
+
+  const signedIn = String(searchParams?.signed_in ?? "") === "1";
+  const toastMessage = signedIn ? "Signed in." : null;
 
   let dashboard = {
     snapshot: [
@@ -465,11 +685,48 @@ export default async function AdminDashboardPage() {
     ],
     recentActivity: [],
     needsAttention: [
-      { title: "Projects missing cover image", value: "—" },
-      { title: "Projects missing live URL", value: "—" },
-      { title: "Projects missing GitHub URL", value: "—" },
-      { title: "Projects missing description", value: "—" },
+      {
+        title: "Published projects missing cover image",
+        value: "—",
+        href: "/admin/projects",
+      },
+      {
+        title: "Published projects missing live URL",
+        value: "—",
+        href: "/admin/projects",
+      },
+      {
+        title: "Published projects missing GitHub URL",
+        value: "—",
+        href: "/admin/projects",
+      },
+      {
+        title: "Published projects missing description",
+        value: "—",
+        href: "/admin/projects",
+      },
+      {
+        title: "Services enabled but no active cards",
+        value: "—",
+        href: "/admin/services",
+      },
+      {
+        title: "Contact form missing destination email",
+        value: "—",
+        href: "/admin/settings",
+      },
+      {
+        title: "About tools list is empty",
+        value: "—",
+        href: "/admin/about",
+      },
+      {
+        title: "Header languages list is empty",
+        value: "—",
+        href: "/admin/about",
+      },
     ],
+    projectAttentionExamples: [],
     setupMessage: null,
   };
 
@@ -489,6 +746,11 @@ export default async function AdminDashboardPage() {
   const needsAttention = Array.isArray(dashboard.needsAttention)
     ? dashboard.needsAttention
     : [];
+  const projectAttentionExamples = Array.isArray(
+    dashboard.projectAttentionExamples,
+  )
+    ? dashboard.projectAttentionExamples
+    : [];
   const setupMessage =
     typeof dashboard.setupMessage === "string" && dashboard.setupMessage.trim()
       ? dashboard.setupMessage.trim()
@@ -496,6 +758,10 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
+      {toastMessage ? (
+        <ToastOnMount variant="success" message={toastMessage} />
+      ) : null}
+
       <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-2xl p-7 sm:p-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div>
@@ -674,30 +940,70 @@ export default async function AdminDashboardPage() {
                     </h3>
                   </div>
                   <p className="text-base text-gray-700 Ovo mt-1">
-                    Keep content complete before publishing.
+                    Visitor-facing checks for your public site.
                   </p>
                 </div>
-                <Link
-                  href="/admin/projects"
-                  className="text-base font-medium text-blue-700 hover:text-blue-800 Ovo"
-                >
-                  Projects
-                </Link>
               </div>
 
               <div className="mt-5 grid gap-3">
-                {needsAttention.map((row) => (
-                  <div
-                    key={row.title}
-                    className="rounded-2xl border border-gray-200 bg-white p-4 flex items-center justify-between gap-4"
-                  >
-                    <p className="text-base text-gray-800 Ovo">{row.title}</p>
-                    <p className="text-base font-semibold text-gray-900 Ovo whitespace-nowrap">
-                      {row.value}
-                    </p>
-                  </div>
-                ))}
+                {needsAttention.map((row) => {
+                  const href =
+                    typeof row?.href === "string" && row.href.trim()
+                      ? row.href.trim()
+                      : null;
+
+                  return (
+                    <div
+                      key={row.title}
+                      className="rounded-2xl border border-gray-200 bg-white p-4 flex items-center justify-between gap-4"
+                    >
+                      {href ? (
+                        <Link
+                          href={href}
+                          className="text-base text-blue-700 hover:text-blue-800 Ovo"
+                        >
+                          {row.title}
+                        </Link>
+                      ) : (
+                        <p className="text-base text-gray-800 Ovo">
+                          {row.title}
+                        </p>
+                      )}
+                      <p className="text-base font-semibold text-gray-900 Ovo whitespace-nowrap">
+                        {row.value}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
+
+              {projectAttentionExamples.length ? (
+                <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-4">
+                  <p className="text-base font-semibold text-gray-900 Ovo">
+                    Example projects to fix
+                  </p>
+                  <div className="mt-3 grid gap-2">
+                    {projectAttentionExamples.map((item) => (
+                      <div
+                        key={item.slug}
+                        className="flex items-start justify-between gap-4"
+                      >
+                        <Link
+                          href={`/admin/projects/${encodeURIComponent(item.slug)}`}
+                          className="text-sm font-medium text-blue-700 hover:text-blue-800 Ovo flex-1 min-w-0 truncate"
+                        >
+                          {item.title}
+                        </Link>
+                        <p className="text-xs text-gray-600 Ovo whitespace-nowrap">
+                          {Array.isArray(item.missing)
+                            ? item.missing.join(", ")
+                            : ""}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="mt-5 rounded-2xl border border-gray-200 bg-linear-to-r from-blue-50/60 to-purple-50/60 p-4">
                 <p className="text-sm text-gray-700 Ovo">

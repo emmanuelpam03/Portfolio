@@ -3,6 +3,7 @@ import { unstable_rethrow } from "next/navigation";
 import { Folder } from "lucide-react";
 
 import { getAllProjectsAdmin } from "@/app/actions/projectsActions";
+import ToastOnMount from "@/app/components/ToastOnMount";
 
 import AdminProjectDeleteForm from "./AdminProjectDeleteForm";
 
@@ -13,11 +14,15 @@ export const metadata = {
 export default async function AdminProjectsPage({ searchParams }) {
   const created = String(searchParams?.created ?? "") === "1";
   const updated = String(searchParams?.updated ?? "") === "1";
+  const deleted = String(searchParams?.deleted ?? "") === "1";
+
   const bannerMessage = created
     ? "Project created successfully."
     : updated
       ? "Project updated successfully."
-      : null;
+      : deleted
+        ? "Project removed."
+        : null;
 
   let projects = [];
   try {
@@ -31,6 +36,10 @@ export default async function AdminProjectsPage({ searchParams }) {
   }
   return (
     <div className="max-w-6xl mx-auto">
+      {bannerMessage ? (
+        <ToastOnMount variant="success" message={bannerMessage} />
+      ) : null}
+
       <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-2xl p-7 sm:p-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>

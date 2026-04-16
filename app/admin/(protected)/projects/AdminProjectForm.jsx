@@ -17,7 +17,10 @@ import { useToast } from "@/app/components/ToastProvider";
 const initialState = { ok: false, message: null, errors: {}, fields: {} };
 
 function makeClientId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -41,10 +44,7 @@ function inferAltFromFilename(filename) {
   if (!name) return "";
 
   const withoutExt = name.replace(/\.[^/.]+$/, "");
-  const cleaned = withoutExt
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const cleaned = withoutExt.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
 
   if (!cleaned) return "";
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
@@ -205,7 +205,8 @@ export default function AdminProjectForm({
   const { success: toastSuccess, error: toastError } = useToast();
 
   useEffect(() => {
-    const message = typeof state?.message === "string" ? state.message.trim() : "";
+    const message =
+      typeof state?.message === "string" ? state.message.trim() : "";
     if (!message) return;
 
     if (state?.ok) {
@@ -383,15 +384,21 @@ export default function AdminProjectForm({
 
                   if (!upserted?.ok) {
                     const detail =
-                      typeof upserted?.message === "string" && upserted.message.length
+                      typeof upserted?.message === "string" &&
+                      upserted.message.length
                         ? upserted.message
                         : "Unable to save media.";
-                    setHeroUploadError(
-                      `Uploaded, but couldn't add to media library: ${detail}`,
-                    );
+                    const message = `Uploaded, but couldn't add to media library: ${detail}`;
+                    setHeroUploadError(message);
+                    toastError(message);
+                    return;
                   }
+
+                  toastSuccess("Hero image uploaded.");
                 } catch (error) {
-                  setHeroUploadError(toErrorMessage(error));
+                  const message = toErrorMessage(error);
+                  setHeroUploadError(message);
+                  toastError(message);
                 } finally {
                   setHeroUploading(false);
                   e.target.value = "";
@@ -635,7 +642,9 @@ export default function AdminProjectForm({
           <div className="mt-4 grid grid-cols-1 gap-4">
             {media.map((item, index) => {
               const isVideo = item.type === "video";
-              const clientId = String(item?.clientId ?? `${item.type}-${index}`);
+              const clientId = String(
+                item?.clientId ?? `${item.type}-${index}`,
+              );
               const mediaKey = `media-${clientId}`;
               const posterKey = `poster-${clientId}`;
               const fileInputId = `media-${clientId}-file`;
@@ -656,7 +665,10 @@ export default function AdminProjectForm({
                     <div className="inline-flex items-center gap-2">
                       <span className="w-10 h-10 rounded-2xl border border-gray-200 bg-gradient-to-br from-blue-100 to-purple-100 inline-flex items-center justify-center">
                         {isVideo ? (
-                          <Video className="w-5 h-5 text-blue-800" aria-hidden="true" />
+                          <Video
+                            className="w-5 h-5 text-blue-800"
+                            aria-hidden="true"
+                          />
                         ) : (
                           <ImageIcon
                             className="w-5 h-5 text-blue-800"
@@ -672,7 +684,9 @@ export default function AdminProjectForm({
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={() => setMedia((items) => moveItem(items, index, index - 1))}
+                        onClick={() =>
+                          setMedia((items) => moveItem(items, index, index - 1))
+                        }
                         disabled={index === 0 || isPending || isUploading}
                         className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-50 inline-flex items-center gap-2"
                         aria-label="Move up"
@@ -683,8 +697,12 @@ export default function AdminProjectForm({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setMedia((items) => moveItem(items, index, index + 1))}
-                        disabled={index === media.length - 1 || isPending || isUploading}
+                        onClick={() =>
+                          setMedia((items) => moveItem(items, index, index + 1))
+                        }
+                        disabled={
+                          index === media.length - 1 || isPending || isUploading
+                        }
                         className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-50 inline-flex items-center gap-2"
                         aria-label="Move down"
                         title="Move down"
@@ -695,7 +713,9 @@ export default function AdminProjectForm({
                       <button
                         type="button"
                         onClick={() =>
-                          setMedia((items) => items.filter((_, i) => i !== index))
+                          setMedia((items) =>
+                            items.filter((_, i) => i !== index),
+                          )
                         }
                         disabled={isPending || isUploading}
                         className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-red-600 text-sm font-medium inline-flex items-center gap-2"
@@ -735,7 +755,11 @@ export default function AdminProjectForm({
                             }
                             onClick={() => {
                               if (!item.url) return;
-                              window.open(item.url, "_blank", "noopener,noreferrer");
+                              window.open(
+                                item.url,
+                                "_blank",
+                                "noopener,noreferrer",
+                              );
                             }}
                             className="px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
                           >
@@ -757,7 +781,9 @@ export default function AdminProjectForm({
                               }));
                               setMedia((items) =>
                                 items.map((x) =>
-                                  x.clientId === clientId ? { ...x, url: "" } : x,
+                                  x.clientId === clientId
+                                    ? { ...x, url: "" }
+                                    : x,
                                 ),
                               );
                             }}
@@ -786,7 +812,9 @@ export default function AdminProjectForm({
 
                           <label
                             htmlFor={fileInputId}
-                            aria-disabled={isPending || isUploading || mediaIsUploading}
+                            aria-disabled={
+                              isPending || isUploading || mediaIsUploading
+                            }
                             className={`px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium transition-all duration-300 ${
                               isPending || isUploading || mediaIsUploading
                                 ? "opacity-60 cursor-not-allowed"
@@ -803,7 +831,9 @@ export default function AdminProjectForm({
                             id={fileInputId}
                             type="file"
                             accept={isVideo ? "video/*" : "image/*"}
-                            disabled={isPending || isUploading || mediaIsUploading}
+                            disabled={
+                              isPending || isUploading || mediaIsUploading
+                            }
                             className="sr-only"
                             onChange={async (e) => {
                               const file = e.target.files?.[0];
@@ -824,7 +854,9 @@ export default function AdminProjectForm({
                                   resourceType: isVideo ? "video" : "image",
                                 });
 
-                                const existingAlt = String(item?.alt ?? "").trim();
+                                const existingAlt = String(
+                                  item?.alt ?? "",
+                                ).trim();
                                 let nextAlt = existingAlt;
                                 if (!nextAlt) {
                                   nextAlt = inferAltFromFilename(file?.name);
@@ -842,10 +874,10 @@ export default function AdminProjectForm({
                                       ? {
                                           ...x,
                                           url: result.secureUrl,
-                                          alt:
-                                            String(x?.alt ?? "").trim().length
-                                              ? x.alt
-                                              : nextAlt,
+                                          alt: String(x?.alt ?? "").trim()
+                                            .length
+                                            ? x.alt
+                                            : nextAlt,
                                         }
                                       : x,
                                   ),
@@ -863,17 +895,27 @@ export default function AdminProjectForm({
                                     upserted.message.length
                                       ? upserted.message
                                       : "Unable to save media.";
+                                  const message = `Uploaded, but couldn't add to media library: ${detail}`;
                                   setMediaUploadErrors((prev) => ({
                                     ...prev,
-                                    [mediaKey]:
-                                      `Uploaded, but couldn't add to media library: ${detail}`,
+                                    [mediaKey]: message,
                                   }));
+                                  toastError(message);
+                                  return;
                                 }
+
+                                toastSuccess(
+                                  isVideo
+                                    ? "Video uploaded."
+                                    : "Image uploaded.",
+                                );
                               } catch (error) {
+                                const message = toErrorMessage(error);
                                 setMediaUploadErrors((prev) => ({
                                   ...prev,
-                                  [mediaKey]: toErrorMessage(error),
+                                  [mediaKey]: message,
                                 }));
+                                toastError(message);
                               } finally {
                                 setMediaUploading((prev) => ({
                                   ...prev,
@@ -887,7 +929,9 @@ export default function AdminProjectForm({
                       </div>
 
                       <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 aspect-video relative">
-                        {!isVideo && item.url && canPreviewWithNextImage(item.url) ? (
+                        {!isVideo &&
+                        item.url &&
+                        canPreviewWithNextImage(item.url) ? (
                           <Image
                             src={item.url}
                             alt={item.alt ? item.alt : "Uploaded image"}
@@ -972,11 +1016,10 @@ export default function AdminProjectForm({
                                           ? {
                                               ...x,
                                               url: asset.url,
-                                              alt:
-                                                String(x?.alt ?? "").trim()
-                                                  .length
-                                                  ? x.alt
-                                                  : assetAlt || x.alt,
+                                              alt: String(x?.alt ?? "").trim()
+                                                .length
+                                                ? x.alt
+                                                : assetAlt || x.alt,
                                             }
                                           : x,
                                       ),
@@ -994,8 +1037,8 @@ export default function AdminProjectForm({
                             </div>
                           ) : (
                             <p className="text-sm text-gray-600 Ovo mt-3">
-                              No {isVideo ? "videos" : "images"} in the media library
-                              yet.
+                              No {isVideo ? "videos" : "images"} in the media
+                              library yet.
                             </p>
                           )}
                         </div>
@@ -1089,7 +1132,9 @@ export default function AdminProjectForm({
 
                               <label
                                 htmlFor={posterInputId}
-                                aria-disabled={isPending || isUploading || posterIsUploading}
+                                aria-disabled={
+                                  isPending || isUploading || posterIsUploading
+                                }
                                 className={`px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-700 text-sm font-medium transition-all duration-300 ${
                                   isPending || isUploading || posterIsUploading
                                     ? "opacity-60 cursor-not-allowed"
@@ -1106,7 +1151,9 @@ export default function AdminProjectForm({
                                 id={posterInputId}
                                 type="file"
                                 accept="image/*"
-                                disabled={isPending || isUploading || posterIsUploading}
+                                disabled={
+                                  isPending || isUploading || posterIsUploading
+                                }
                                 className="sr-only"
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
@@ -1137,17 +1184,20 @@ export default function AdminProjectForm({
                                       ),
                                     );
 
-                                    let altText = inferAltFromFilename(file?.name);
+                                    let altText = inferAltFromFilename(
+                                      file?.name,
+                                    );
                                     if (!altText) altText = "Poster image";
                                     if (altText.length > 200) {
                                       altText = altText.slice(0, 200);
                                     }
 
-                                    const upserted = await upsertMediaAssetAction({
-                                      type: "image",
-                                      url: result.secureUrl,
-                                      alt: altText,
-                                    });
+                                    const upserted =
+                                      await upsertMediaAssetAction({
+                                        type: "image",
+                                        url: result.secureUrl,
+                                        alt: altText,
+                                      });
 
                                     if (!upserted?.ok) {
                                       const detail =
@@ -1155,17 +1205,23 @@ export default function AdminProjectForm({
                                         upserted.message.length
                                           ? upserted.message
                                           : "Unable to save media.";
+                                      const message = `Uploaded, but couldn't add to media library: ${detail}`;
                                       setMediaUploadErrors((prev) => ({
                                         ...prev,
-                                        [posterKey]:
-                                          `Uploaded, but couldn't add to media library: ${detail}`,
+                                        [posterKey]: message,
                                       }));
+                                      toastError(message);
+                                      return;
                                     }
+
+                                    toastSuccess("Poster uploaded.");
                                   } catch (error) {
+                                    const message = toErrorMessage(error);
                                     setMediaUploadErrors((prev) => ({
                                       ...prev,
-                                      [posterKey]: toErrorMessage(error),
+                                      [posterKey]: message,
                                     }));
+                                    toastError(message);
                                   } finally {
                                     setMediaUploading((prev) => ({
                                       ...prev,
@@ -1179,7 +1235,8 @@ export default function AdminProjectForm({
                           </div>
 
                           <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 aspect-video relative">
-                            {item.poster_url && canPreviewWithNextImage(item.poster_url) ? (
+                            {item.poster_url &&
+                            canPreviewWithNextImage(item.poster_url) ? (
                               <Image
                                 src={item.poster_url}
                                 alt="Poster image preview"
