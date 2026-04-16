@@ -53,8 +53,7 @@ export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const timeoutsRef = useRef(new Map());
 
-  const portalTarget =
-    typeof document === "undefined" ? null : document.body;
+  const portalTarget = typeof document === "undefined" ? null : document.body;
 
   useEffect(() => {
     const timeouts = timeoutsRef.current;
@@ -112,9 +111,9 @@ export function ToastProvider({ children }) {
     () => ({
       toast: (message, options) => addToast({ message, ...(options ?? {}) }),
       success: (message, options) =>
-        addToast({ message, variant: "success", ...(options ?? {}) }),
+        addToast({ message, ...(options ?? {}), variant: "success" }),
       error: (message, options) =>
-        addToast({ message, variant: "error", ...(options ?? {}) }),
+        addToast({ message, ...(options ?? {}), variant: "error" }),
     }),
     [addToast],
   );
@@ -125,7 +124,7 @@ export function ToastProvider({ children }) {
       {portalTarget
         ? createPortal(
             <div
-              className="pointer-events-none fixed right-4 top-4 z-[99999] flex w-[min(92vw,420px)] flex-col gap-3"
+              className="pointer-events-none fixed right-4 top-4 flex w-[min(92vw,420px)] flex-col gap-3"
               style={{ zIndex: 2147483000 }}
               aria-live="polite"
               aria-relevant="additions"
