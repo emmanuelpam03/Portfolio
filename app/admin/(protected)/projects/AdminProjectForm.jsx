@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { upsertMediaAssetAction } from "@/app/actions/mediaActions";
+import { useToast } from "@/app/components/ToastProvider";
 
 const initialState = { ok: false, message: null, errors: {}, fields: {} };
 
@@ -200,6 +201,19 @@ export default function AdminProjectForm({
   const [mediaUploading, setMediaUploading] = useState(() => ({}));
   const [mediaUploadErrors, setMediaUploadErrors] = useState(() => ({}));
   const [state, formAction, isPending] = useActionState(action, initialState);
+
+  const { success: toastSuccess, error: toastError } = useToast();
+
+  useEffect(() => {
+    const message = typeof state?.message === "string" ? state.message.trim() : "";
+    if (!message) return;
+
+    if (state?.ok) {
+      toastSuccess(message);
+    } else {
+      toastError(message);
+    }
+  }, [state, toastSuccess, toastError]);
 
   const errors = state?.errors ?? {};
 

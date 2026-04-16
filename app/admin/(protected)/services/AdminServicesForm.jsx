@@ -15,6 +15,7 @@ import {
 import { DynamicIcon } from "lucide-react/dynamic";
 
 import { updateServicesAction } from "@/app/actions/servicesActions";
+import { useToast } from "@/app/components/ToastProvider";
 
 const initialState = {
   ok: false,
@@ -223,6 +224,19 @@ export default function AdminServicesForm({
     initialState,
   );
 
+  const { success: toastSuccess, error: toastError } = useToast();
+
+  useEffect(() => {
+    const message = typeof state?.message === "string" ? state.message.trim() : "";
+    if (!message) return;
+
+    if (state?.ok) {
+      toastSuccess(message);
+    } else {
+      toastError(message);
+    }
+  }, [state, toastSuccess, toastError]);
+
   const readyForDbWrites = !setupMessage;
   const errors = state?.errors ?? {};
 
@@ -333,7 +347,9 @@ export default function AdminServicesForm({
     if (!file) return;
 
     if (!isImageFile(file)) {
-      setDraftIconUploadError("Choose an image file (SVG/PNG/JPG/WebP).");
+      const message = "Choose an image file (SVG/PNG/JPG/WebP).";
+      setDraftIconUploadError(message);
+      toastError(message);
       return;
     }
 
@@ -348,8 +364,11 @@ export default function AdminServicesForm({
       });
 
       setDraftService((prev) => ({ ...prev, icon_url: secureUrl }));
+      toastSuccess("Icon uploaded.");
     } catch (error) {
-      setDraftIconUploadError(toUploadErrorMessage(error));
+      const message = toUploadErrorMessage(error);
+      setDraftIconUploadError(message);
+      toastError(message);
     } finally {
       setIsDraftIconUploading(false);
     }
@@ -361,8 +380,10 @@ export default function AdminServicesForm({
     if (!file) return;
 
     if (!isImageFile(file)) {
+      const message = "Choose an image file (SVG/PNG/JPG/WebP).";
       setIconUploadErrorIndex(index);
-      setIconUploadError("Choose an image file (SVG/PNG/JPG/WebP).");
+      setIconUploadError(message);
+      toastError(message);
       return;
     }
 
@@ -378,9 +399,12 @@ export default function AdminServicesForm({
       });
 
       updateService(index, { icon_url: secureUrl });
+      toastSuccess("Icon updated.");
     } catch (error) {
+      const message = toUploadErrorMessage(error);
       setIconUploadErrorIndex(index);
-      setIconUploadError(toUploadErrorMessage(error));
+      setIconUploadError(message);
+      toastError(message);
     } finally {
       setIconUploadingIndex(null);
     }

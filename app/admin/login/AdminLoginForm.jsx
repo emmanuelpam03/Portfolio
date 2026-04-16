@@ -1,11 +1,26 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+
+import { useToast } from "@/app/components/ToastProvider";
 
 const initialState = { ok: false, message: null, fields: { email: "" } };
 
 export default function AdminLoginForm({ action }) {
   const [state, formAction, isPending] = useActionState(action, initialState);
+  const { success: toastSuccess, error: toastError } = useToast();
+
+  useEffect(() => {
+    const message =
+      typeof state?.message === "string" ? state.message.trim() : "";
+    if (!message) return;
+
+    if (state?.ok) {
+      toastSuccess(message);
+    } else {
+      toastError(message);
+    }
+  }, [state, toastSuccess, toastError]);
 
   return (
     <form className="grid grid-cols-1 gap-4" action={formAction} noValidate>

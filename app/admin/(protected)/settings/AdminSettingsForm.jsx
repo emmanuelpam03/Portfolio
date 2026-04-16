@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import { updateSettingsAction } from "@/app/actions/settingsActions";
+import { useToast } from "@/app/components/ToastProvider";
 
 const initialState = {
   ok: false,
@@ -95,6 +96,20 @@ export default function AdminSettingsForm({ initialSettings, setupMessage }) {
     initialState,
   );
 
+  const { success: toastSuccess, error: toastError } = useToast();
+
+  useEffect(() => {
+    const message =
+      typeof state?.message === "string" ? state.message.trim() : "";
+    if (!message) return;
+
+    if (state?.ok) {
+      toastSuccess(message);
+    } else {
+      toastError(message);
+    }
+  }, [state, toastSuccess, toastError]);
+
   const [cvUrl, setCvUrl] = useState(() =>
     normalizeInitialCvUrl(initialSettings),
   );
@@ -104,6 +119,18 @@ export default function AdminSettingsForm({ initialSettings, setupMessage }) {
     status: "idle", // idle | uploading | error | success
     message: "",
   });
+
+  useEffect(() => {
+    if (cvUpload.status === "success") {
+      const message = String(cvUpload.message ?? "").trim() || "CV uploaded.";
+      toastSuccess(message);
+    }
+
+    if (cvUpload.status === "error") {
+      const message = String(cvUpload.message ?? "").trim() || "Upload failed.";
+      toastError(message);
+    }
+  }, [cvUpload.status, cvUpload.message, toastSuccess, toastError]);
 
   const readyForDbWrites = !setupMessage;
   const errors = state?.errors ?? {};

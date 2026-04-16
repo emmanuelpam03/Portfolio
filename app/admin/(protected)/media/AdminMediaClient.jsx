@@ -9,6 +9,7 @@ import {
   deleteMediaAssetAction,
   upsertMediaAssetAction,
 } from "@/app/actions/mediaActions";
+import { useToast } from "@/app/components/ToastProvider";
 
 function toErrorMessage(error) {
   if (error instanceof Error && error.message) return error.message;
@@ -121,6 +122,7 @@ function inferAltFromFilename(filename) {
 
 export default function AdminMediaClient({ initialAssets, setupMessage }) {
   const readyForDbWrites = !setupMessage;
+  const { success: toastSuccess, error: toastError } = useToast();
 
   const initial = useMemo(
     () => normalizeAssets(initialAssets),
@@ -230,12 +232,16 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
     setActionError(null);
 
     if (uploadingRef.current) {
-      setUploadError("An upload is already in progress. Please wait.");
+      const message = "An upload is already in progress. Please wait.";
+      setUploadError(message);
+      toastError(message);
       return;
     }
 
     if (!readyForDbWrites) {
-      setUploadError(setupMessage || "Database not ready.");
+      const message = setupMessage || "Database not ready.";
+      setUploadError(message);
+      toastError(message);
       return;
     }
 
@@ -260,7 +266,9 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
     if (!altText) {
       uploadingRef.current = false;
       setUploading(false);
-      setUploadError("Alt text is required.");
+      const message = "Alt text is required.";
+      setUploadError(message);
+      toastError(message);
       return;
     }
 
@@ -306,8 +314,11 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
       });
 
       setUploadAlt("");
+      toastSuccess("Media uploaded.");
     } catch (error) {
-      setUploadError(toErrorMessage(error));
+      const message = toErrorMessage(error);
+      setUploadError(message);
+      toastError(message);
     } finally {
       uploadingRef.current = false;
       setUploading(false);
@@ -327,8 +338,11 @@ export default function AdminMediaClient({ initialAssets, setupMessage }) {
       }
 
       setAssets((prev) => prev.filter((x) => x.id !== asset.id));
+      toastSuccess("Media removed.");
     } catch (error) {
-      setActionError(toErrorMessage(error));
+      const message = toErrorMessage(error);
+      setActionError(message);
+      toastError(message);
     } finally {
       setDeletingIds((prev) => ({ ...prev, [asset.id]: false }));
     }

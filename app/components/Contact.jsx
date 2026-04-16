@@ -6,6 +6,7 @@ import { useActionState, useEffect, useRef } from "react";
 import { ArrowRight } from "lucide-react";
 
 import { submitContact } from "@/app/actions/contact";
+import { useToast } from "@/app/components/ToastProvider";
 
 const initialState = {
   success: false,
@@ -20,12 +21,26 @@ const Contact = () => {
     initialState,
   );
 
+  const { success: toastSuccess, error: toastError } = useToast();
+
   const formRef = useRef(null);
   useEffect(() => {
     if (state?.success) {
       formRef.current?.reset();
     }
   }, [state?.success]);
+
+  useEffect(() => {
+    const message =
+      typeof state?.message === "string" ? state.message.trim() : "";
+    if (!message) return;
+
+    if (state?.success) {
+      toastSuccess(message);
+    } else {
+      toastError(message);
+    }
+  }, [state, toastSuccess, toastError]);
 
   return (
     <motion.div

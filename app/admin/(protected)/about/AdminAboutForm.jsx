@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 
 import { updateAboutAction } from "@/app/actions/aboutActions";
+import { useToast } from "@/app/components/ToastProvider";
 import { infoList } from "@/assets/assets";
 
 const initialState = {
@@ -221,6 +222,20 @@ export default function AdminAboutForm({
     updateAboutAction,
     initialState,
   );
+
+  const { success: toastSuccess, error: toastError } = useToast();
+
+  useEffect(() => {
+    const message =
+      typeof state?.message === "string" ? state.message.trim() : "";
+    if (!message) return;
+
+    if (state?.ok) {
+      toastSuccess(message);
+    } else {
+      toastError(message);
+    }
+  }, [state, toastSuccess, toastError]);
 
   const mediaImages = useMemo(() => {
     const assets = Array.isArray(mediaLibrary) ? mediaLibrary : [];
