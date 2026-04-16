@@ -31,9 +31,20 @@ function isMissingServicesTables(error) {
   );
 }
 
+function isMissingServicesIconUrlColumn(error) {
+  const message = String(error instanceof Error ? error.message : error);
+  return (
+    message.includes('column "icon_url" does not exist') ||
+    message.includes("column services.icon_url does not exist")
+  );
+}
+
 function setupMessageFromError(error) {
   if (isMissingServicesTables(error)) {
     return "Services tables are missing. Apply app/lib/services.sql to your database.";
+  }
+  if (isMissingServicesIconUrlColumn(error)) {
+    return "Services table is missing icon_url. Re-apply app/lib/services.sql to enable uploaded icons.";
   }
   return null;
 }
@@ -92,6 +103,7 @@ async function loadServicesRowsPublic() {
       title,
       description,
       icon_key,
+      icon_url,
       link_url,
       sort_order,
       is_active
@@ -110,6 +122,7 @@ async function loadServicesRowsAdmin() {
       title,
       description,
       icon_key,
+      icon_url,
       link_url,
       sort_order,
       is_active
@@ -146,6 +159,7 @@ function normalizeServicesRows(rows) {
       title: row?.title ? String(row.title) : "",
       description: row?.description ? String(row.description) : "",
       icon_key: row?.icon_key ? String(row.icon_key) : "",
+      icon_url: row?.icon_url ? String(row.icon_url) : null,
       link_url: row?.link_url ? String(row.link_url) : null,
       sort_order: Number(row?.sort_order ?? 0),
       is_active: Boolean(row?.is_active),
@@ -244,6 +258,7 @@ export async function updateServicesAction(_prevState, formData) {
       title: String(item?.title ?? ""),
       description: String(item?.description ?? ""),
       icon_key: String(item?.icon_key ?? ""),
+      icon_url: trimOrNull(item?.icon_url),
       link_url: trimOrNull(item?.link_url),
       is_active: Boolean(item?.is_active ?? true),
     })),
@@ -301,6 +316,7 @@ export async function updateServicesAction(_prevState, formData) {
           title,
           description,
           icon_key,
+          icon_url,
           link_url,
           is_active,
           sort_order
@@ -309,6 +325,7 @@ export async function updateServicesAction(_prevState, formData) {
           ${service.title},
           ${service.description},
           ${service.icon_key},
+          ${service.icon_url ?? null},
           ${service.link_url ?? null},
           ${service.is_active},
           ${index}

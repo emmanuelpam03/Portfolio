@@ -1,13 +1,18 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowDown,
   ArrowUp,
   GripVertical,
   Plus,
+  Puzzle,
   Trash2,
+  X,
 } from "lucide-react";
+import { DynamicIcon } from "lucide-react/dynamic";
 
 import { updateServicesAction } from "@/app/actions/servicesActions";
 
@@ -36,6 +41,7 @@ const FALLBACK_SERVICES = [
     title: "Web design",
     description: "Web development is the process of building, programming...",
     icon_key: "globe",
+    icon_url: "",
     link_url: "",
     is_active: true,
   },
@@ -44,6 +50,7 @@ const FALLBACK_SERVICES = [
     description:
       "Mobile app development involves creating software for mobile devices...",
     icon_key: "smartphone",
+    icon_url: "",
     link_url: "",
     is_active: true,
   },
@@ -52,6 +59,7 @@ const FALLBACK_SERVICES = [
     description:
       "UI/UX design focuses on creating a seamless user experience...",
     icon_key: "layout",
+    icon_url: "",
     link_url: "",
     is_active: true,
   },
@@ -59,16 +67,10 @@ const FALLBACK_SERVICES = [
     title: "Graphics design",
     description: "Creative design solutions to enhance visual communication...",
     icon_key: "brush",
+    icon_url: "",
     link_url: "",
     is_active: true,
   },
-];
-
-const ICON_OPTIONS = [
-  { value: "globe", label: "Globe" },
-  { value: "smartphone", label: "Smartphone" },
-  { value: "layout", label: "Layout" },
-  { value: "brush", label: "Brush" },
 ];
 
 function pickText(value, fallback) {
@@ -115,6 +117,7 @@ function normalizeInitialServices(services, { allowFallback } = {}) {
       title: typeof row?.title === "string" ? row.title : "",
       description: typeof row?.description === "string" ? row.description : "",
       icon_key: typeof row?.icon_key === "string" ? row.icon_key : "globe",
+      icon_url: typeof row?.icon_url === "string" ? row.icon_url : "",
       link_url: typeof row?.link_url === "string" ? row.link_url : "",
       is_active: Boolean(row?.is_active ?? true),
       sort_order: Number(row?.sort_order ?? 0),
@@ -139,6 +142,77 @@ function moveItem(list, fromIndex, toIndex) {
   return next;
 }
 
+function toUploadErrorMessage(error) {
+  if (error instanceof Error && error.message) return error.message;
+  return "Upload failed.";
+}
+
+async function getCloudinarySignature({ folder } = {}) {
+  const body = folder ? JSON.stringify({ folder }) : null;
+
+  const response = await fetch("/api/cloudinary/signature", {
+    method: "POST",
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body,
+  });
+
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message =
+      typeof json?.error === "string" && json.error.length
+        ? json.error
+        : "Unable to sign upload.";
+    throw new Error(message);
+  }
+
+  return json;
+}
+
+async function uploadToCloudinary({ file, resourceType, folder }) {
+  const {
+    cloudName,
+    apiKey,
+    timestamp,
+    folder: signedFolder,
+    signature,
+  } = await getCloudinarySignature({ folder });
+
+  const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+
+  const body = new FormData();
+  body.append("file", file);
+  body.append("api_key", String(apiKey));
+  body.append("timestamp", String(timestamp));
+  body.append("signature", String(signature));
+  if (signedFolder) body.append("folder", String(signedFolder));
+
+  const response = await fetch(endpoint, { method: "POST", body });
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message =
+      typeof json?.error?.message === "string" && json.error.message.length
+        ? json.error.message
+        : "Upload failed.";
+    throw new Error(message);
+  }
+
+  const secureUrl = String(json?.secure_url ?? "").trim();
+  if (!secureUrl) {
+    throw new Error("Upload failed.");
+  }
+
+  return { secureUrl };
+}
+
+function isImageFile(file) {
+  const mime = String(file?.type ?? "").toLowerCase();
+  return mime.startsWith("image/");
+}
+
+function DynamicPuzzleFallback() {
+  return <Puzzle className="w-5 h-5 text-gray-700" aria-hidden="true" />;
+}
+
 export default function AdminServicesForm({
   initialContent,
   initialServices,
@@ -158,30 +232,196 @@ export default function AdminServicesForm({
   );
 
   const [services, setServices] = useState(() =>
-    normalizeInitialServices(initialServices, { allowFallback: !readyForDbWrites }),
+    normalizeInitialServices(initialServices, {
+      allowFallback: !readyForDbWrites,
+    }),
   );
+
+  const [portalTarget, setPortalTarget] = useState(null);
+
+  useEffect(() => {
+    setPortalTarget(document.body);
+  }, []);
+
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [draftService, setDraftService] = useState(() => ({
+    title: "",
+    description: "",
+    icon_key: "puzzle",
+    icon_url: "",
+    link_url: "",
+    is_active: true,
+  }));
+  const [draftError, setDraftError] = useState(null);
+  const [isDraftIconUploading, setIsDraftIconUploading] = useState(false);
+  const [draftIconUploadError, setDraftIconUploadError] = useState(null);
+
+  const [iconUploadingIndex, setIconUploadingIndex] = useState(null);
+  const [iconUploadError, setIconUploadError] = useState(null);
+  const [iconUploadErrorIndex, setIconUploadErrorIndex] = useState(null);
+
+  const isUploadingAnyIcon =
+    isDraftIconUploading || iconUploadingIndex !== null;
+
+  const addTitleRef = useRef(null);
+  const addDialogBodyOverflowRef = useRef(null);
+
+  useEffect(() => {
+    if (!isAddDialogOpen) return;
+    addTitleRef.current?.focus();
+  }, [isAddDialogOpen]);
+
+  useEffect(() => {
+    if (!isAddDialogOpen) return;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setIsAddDialogOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isAddDialogOpen]);
+
+  useEffect(() => {
+    if (!isAddDialogOpen) return;
+    if (addDialogBodyOverflowRef.current !== null) return;
+
+    addDialogBodyOverflowRef.current = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+  }, [isAddDialogOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (addDialogBodyOverflowRef.current === null) return;
+      document.body.style.overflow = addDialogBodyOverflowRef.current;
+      addDialogBodyOverflowRef.current = null;
+    };
+  }, []);
 
   const servicesJson = JSON.stringify(
     services.map((service) => ({
       title: service.title,
       description: service.description,
       icon_key: service.icon_key,
+      icon_url: service.icon_url ? service.icon_url : null,
       link_url: service.link_url ? service.link_url : null,
       is_active: Boolean(service.is_active),
     })),
   );
 
-  function addService() {
+  function openAddServiceDialog() {
+    setDraftError(null);
+    setDraftIconUploadError(null);
+    setDraftService({
+      title: "",
+      description: "",
+      icon_key: "puzzle",
+      icon_url: "",
+      link_url: "",
+      is_active: true,
+    });
+    setIsAddDialogOpen(true);
+  }
+
+  function closeAddServiceDialog() {
+    setIsAddDialogOpen(false);
+    setDraftError(null);
+    setDraftIconUploadError(null);
+  }
+
+  async function handleDraftIconFileChange(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!isImageFile(file)) {
+      setDraftIconUploadError("Choose an image file (SVG/PNG/JPG/WebP).");
+      return;
+    }
+
+    setDraftIconUploadError(null);
+    setIsDraftIconUploading(true);
+
+    try {
+      const { secureUrl } = await uploadToCloudinary({
+        file,
+        resourceType: "image",
+        folder: "portfolio/media",
+      });
+
+      setDraftService((prev) => ({ ...prev, icon_url: secureUrl }));
+    } catch (error) {
+      setDraftIconUploadError(toUploadErrorMessage(error));
+    } finally {
+      setIsDraftIconUploading(false);
+    }
+  }
+
+  async function handleServiceIconFileChange(index, event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!isImageFile(file)) {
+      setIconUploadErrorIndex(index);
+      setIconUploadError("Choose an image file (SVG/PNG/JPG/WebP).");
+      return;
+    }
+
+    setIconUploadError(null);
+    setIconUploadErrorIndex(null);
+    setIconUploadingIndex(index);
+
+    try {
+      const { secureUrl } = await uploadToCloudinary({
+        file,
+        resourceType: "image",
+        folder: "portfolio/media",
+      });
+
+      updateService(index, { icon_url: secureUrl });
+    } catch (error) {
+      setIconUploadErrorIndex(index);
+      setIconUploadError(toUploadErrorMessage(error));
+    } finally {
+      setIconUploadingIndex(null);
+    }
+  }
+
+  function confirmAddServiceDialog() {
+    if (isDraftIconUploading) {
+      setDraftError("Wait for the icon upload to finish.");
+      return;
+    }
+
+    const title =
+      typeof draftService.title === "string" ? draftService.title.trim() : "";
+    const description =
+      typeof draftService.description === "string"
+        ? draftService.description.trim()
+        : "";
+
+    if (!title || !description) {
+      setDraftError("Title and description are required.");
+      return;
+    }
+
+    const iconKey =
+      String(draftService.icon_key ?? "")
+        .trim()
+        .toLowerCase() || "puzzle";
+
     setServices((prev) => [
       ...(Array.isArray(prev) ? prev : []),
       {
-        title: "",
-        description: "",
-        icon_key: "globe",
-        link_url: "",
-        is_active: true,
+        title,
+        description,
+        icon_key: iconKey,
+        icon_url: String(draftService.icon_url ?? "").trim(),
+        link_url: String(draftService.link_url ?? "").trim(),
+        is_active: Boolean(draftService.is_active),
       },
     ]);
+
+    setIsAddDialogOpen(false);
   }
 
   function updateService(index, patch) {
@@ -215,6 +455,262 @@ export default function AdminServicesForm({
       )}
 
       <input type="hidden" name="services_json" value={servicesJson} />
+
+      {portalTarget
+        ? createPortal(
+            <AnimatePresence
+              onExitComplete={() => {
+                if (addDialogBodyOverflowRef.current === null) return;
+                document.body.style.overflow = addDialogBodyOverflowRef.current;
+                addDialogBodyOverflowRef.current = null;
+              }}
+            >
+              {isAddDialogOpen ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="fixed inset-0 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+                  style={{ zIndex: 2147483647 }}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="add-service-dialog-title"
+                  onMouseDown={(event) => {
+                    if (event.target === event.currentTarget)
+                      closeAddServiceDialog();
+                  }}
+                >
+                  <motion.div
+                    initial={{ opacity: 0, y: 18, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 420,
+                      damping: 32,
+                    }}
+                    className="w-full max-w-xl rounded-3xl bg-white border border-gray-200 shadow-2xl p-6"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3
+                          id="add-service-dialog-title"
+                          className="text-lg font-bold text-gray-900 Ovo mb-1"
+                        >
+                          Add service
+                        </h3>
+                        <p className="text-sm text-gray-600 Ovo">
+                          Create a new service card.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={closeAddServiceDialog}
+                        className="inline-flex items-center justify-center h-10 w-10 rounded-2xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-all duration-300"
+                      >
+                        <X className="w-5 h-5" aria-hidden="true" />
+                        <span className="sr-only">Close</span>
+                      </button>
+                    </div>
+
+                    {draftError ? (
+                      <p className="mt-4 text-sm text-red-600 Ovo">
+                        {draftError}
+                      </p>
+                    ) : null}
+
+                    <div className="mt-6 grid grid-cols-1 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
+                          Title
+                        </label>
+                        <input
+                          ref={addTitleRef}
+                          type="text"
+                          value={draftService.title}
+                          onChange={(e) =>
+                            setDraftService((prev) => ({
+                              ...prev,
+                              title: e.target.value,
+                            }))
+                          }
+                          className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
+                          Description
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={draftService.description}
+                          onChange={(e) =>
+                            setDraftService((prev) => ({
+                              ...prev,
+                              description: e.target.value,
+                            }))
+                          }
+                          className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
+                          Icon
+                        </label>
+                        <div className="flex items-start gap-3">
+                          <div className="h-10 w-10 rounded-2xl border border-gray-200 bg-linear-to-br from-blue-100 to-purple-100 flex items-center justify-center shrink-0 overflow-hidden">
+                            {draftService.icon_url?.trim() ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={draftService.icon_url.trim()}
+                                alt=""
+                                className="h-5 w-5 object-contain"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <DynamicIcon
+                                name={
+                                  draftService.icon_key?.trim()
+                                    ? draftService.icon_key.trim().toLowerCase()
+                                    : "puzzle"
+                                }
+                                fallback={DynamicPuzzleFallback}
+                                className="w-5 h-5 text-gray-700"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </div>
+
+                          <div className="flex-1">
+                            <input
+                              type="file"
+                              accept="image/*,.svg"
+                              onChange={handleDraftIconFileChange}
+                              disabled={
+                                !readyForDbWrites ||
+                                isPending ||
+                                isDraftIconUploading
+                              }
+                              className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-linear-to-r file:from-blue-50 file:to-purple-50 file:text-gray-800 file:font-medium hover:file:bg-gray-100 disabled:opacity-60"
+                            />
+
+                            <div className="mt-2 flex flex-wrap items-center gap-3">
+                              {draftService.icon_url?.trim() ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setDraftService((prev) => ({
+                                      ...prev,
+                                      icon_url: "",
+                                    }))
+                                  }
+                                  disabled={
+                                    !readyForDbWrites ||
+                                    isPending ||
+                                    isDraftIconUploading
+                                  }
+                                  className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-60"
+                                >
+                                  Remove icon
+                                </button>
+                              ) : null}
+
+                              {isDraftIconUploading ? (
+                                <span className="text-xs text-gray-500 Ovo">
+                                  Uploading...
+                                </span>
+                              ) : null}
+                            </div>
+
+                            {draftIconUploadError ? (
+                              <p className="mt-2 text-xs text-red-600 Ovo">
+                                {draftIconUploadError}
+                              </p>
+                            ) : (
+                              <p className="mt-2 text-xs text-gray-500 Ovo">
+                                Upload an icon image (SVG/PNG/JPG/WebP).
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
+                          Optional link
+                        </label>
+                        <input
+                          type="text"
+                          value={draftService.link_url}
+                          onChange={(e) =>
+                            setDraftService((prev) => ({
+                              ...prev,
+                              link_url: e.target.value,
+                            }))
+                          }
+                          className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
+                          placeholder="#contact or /projects or https://..."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 Ovo">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(draftService.is_active)}
+                            onChange={(e) =>
+                              setDraftService((prev) => ({
+                                ...prev,
+                                is_active: e.target.checked,
+                              }))
+                            }
+                            className="h-4 w-4"
+                          />
+                          Visible on public site
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={closeAddServiceDialog}
+                        className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-full border border-gray-200 bg-white text-gray-700 text-base font-medium hover:bg-gray-50 transition-all duration-300"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={confirmAddServiceDialog}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-base font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300"
+                      >
+                        <Plus className="w-4 h-4" aria-hidden="true" />
+                        Add service
+                      </button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>,
+            portalTarget,
+          )
+        : null}
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={openAddServiceDialog}
+          disabled={!readyForDbWrites || isPending}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-gray-700 text-base font-medium hover:bg-linear-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 disabled:opacity-60"
+        >
+          <Plus className="w-4 h-4" aria-hidden="true" />
+          Add new service
+        </button>
+      </div>
 
       <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -251,11 +747,15 @@ export default function AdminServicesForm({
               aria-invalid={Boolean(errors?.kicker_text?.length)}
               disabled={!readyForDbWrites || isPending}
               className={`w-full p-3 outline-none border-[0.5px] rounded-md bg-white ${
-                errors?.kicker_text?.length ? "border-red-300" : "border-gray-300"
+                errors?.kicker_text?.length
+                  ? "border-red-300"
+                  : "border-gray-300"
               }`}
             />
             {Array.isArray(errors?.kicker_text) && errors.kicker_text[0] ? (
-              <p className="mt-2 text-sm text-red-600 Ovo">{errors.kicker_text[0]}</p>
+              <p className="mt-2 text-sm text-red-600 Ovo">
+                {errors.kicker_text[0]}
+              </p>
             ) : null}
           </div>
 
@@ -270,11 +770,15 @@ export default function AdminServicesForm({
               aria-invalid={Boolean(errors?.heading_text?.length)}
               disabled={!readyForDbWrites || isPending}
               className={`w-full p-3 outline-none border-[0.5px] rounded-md bg-white ${
-                errors?.heading_text?.length ? "border-red-300" : "border-gray-300"
+                errors?.heading_text?.length
+                  ? "border-red-300"
+                  : "border-gray-300"
               }`}
             />
             {Array.isArray(errors?.heading_text) && errors.heading_text[0] ? (
-              <p className="mt-2 text-sm text-red-600 Ovo">{errors.heading_text[0]}</p>
+              <p className="mt-2 text-sm text-red-600 Ovo">
+                {errors.heading_text[0]}
+              </p>
             ) : null}
           </div>
         </div>
@@ -294,7 +798,9 @@ export default function AdminServicesForm({
             }`}
           />
           {Array.isArray(errors?.intro_text) && errors.intro_text[0] ? (
-            <p className="mt-2 text-sm text-red-600 Ovo">{errors.intro_text[0]}</p>
+            <p className="mt-2 text-sm text-red-600 Ovo">
+              {errors.intro_text[0]}
+            </p>
           ) : null}
         </div>
       </div>
@@ -336,7 +842,9 @@ export default function AdminServicesForm({
               }`}
             />
             {Array.isArray(errors?.cta_title) && errors.cta_title[0] ? (
-              <p className="mt-2 text-sm text-red-600 Ovo">{errors.cta_title[0]}</p>
+              <p className="mt-2 text-sm text-red-600 Ovo">
+                {errors.cta_title[0]}
+              </p>
             ) : null}
           </div>
 
@@ -380,7 +888,9 @@ export default function AdminServicesForm({
             }`}
           />
           {Array.isArray(errors?.cta_body) && errors.cta_body[0] ? (
-            <p className="mt-2 text-sm text-red-600 Ovo">{errors.cta_body[0]}</p>
+            <p className="mt-2 text-sm text-red-600 Ovo">
+              {errors.cta_body[0]}
+            </p>
           ) : null}
         </div>
 
@@ -395,7 +905,9 @@ export default function AdminServicesForm({
             aria-invalid={Boolean(errors?.cta_button_href?.length)}
             disabled={!readyForDbWrites || isPending}
             className={`w-full p-3 outline-none border-[0.5px] rounded-md bg-white ${
-              errors?.cta_button_href?.length ? "border-red-300" : "border-gray-300"
+              errors?.cta_button_href?.length
+                ? "border-red-300"
+                : "border-gray-300"
             }`}
           />
           <p className="mt-2 text-xs text-gray-500 Ovo">
@@ -403,8 +915,11 @@ export default function AdminServicesForm({
             a path like <span className="font-semibold">/projects</span>, or a
             full https:// URL.
           </p>
-          {Array.isArray(errors?.cta_button_href) && errors.cta_button_href[0] ? (
-            <p className="mt-2 text-sm text-red-600 Ovo">{errors.cta_button_href[0]}</p>
+          {Array.isArray(errors?.cta_button_href) &&
+          errors.cta_button_href[0] ? (
+            <p className="mt-2 text-sm text-red-600 Ovo">
+              {errors.cta_button_href[0]}
+            </p>
           ) : null}
         </div>
       </div>
@@ -422,7 +937,7 @@ export default function AdminServicesForm({
 
           <button
             type="button"
-            onClick={addService}
+            onClick={openAddServiceDialog}
             disabled={!readyForDbWrites || isPending}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-gray-700 text-base font-medium hover:bg-linear-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 disabled:opacity-60"
           >
@@ -444,8 +959,6 @@ export default function AdminServicesForm({
             </div>
           ) : (
             services.map((service, index) => {
-              const iconOptions = ICON_OPTIONS;
-
               return (
                 <div
                   key={`service-${index}`}
@@ -454,10 +967,15 @@ export default function AdminServicesForm({
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="h-10 w-10 rounded-2xl border border-gray-200 bg-linear-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                        <GripVertical className="w-5 h-5 text-gray-600" aria-hidden="true" />
+                        <GripVertical
+                          className="w-5 h-5 text-gray-600"
+                          aria-hidden="true"
+                        />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm text-gray-600 Ovo">Item {index + 1}</p>
+                        <p className="text-sm text-gray-600 Ovo">
+                          Item {index + 1}
+                        </p>
                         <p className="text-base font-semibold text-gray-900 Ovo truncate">
                           {service.title?.trim() ? service.title : "(untitled)"}
                         </p>
@@ -468,11 +986,11 @@ export default function AdminServicesForm({
                       <button
                         type="button"
                         onClick={() =>
-                          setServices((prev) => moveItem(prev, index, index - 1))
+                          setServices((prev) =>
+                            moveItem(prev, index, index - 1),
+                          )
                         }
-                        disabled={
-                          index === 0 || !readyForDbWrites || isPending
-                        }
+                        disabled={index === 0 || !readyForDbWrites || isPending}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-60"
                       >
                         <ArrowUp className="w-4 h-4" aria-hidden="true" />
@@ -481,7 +999,9 @@ export default function AdminServicesForm({
                       <button
                         type="button"
                         onClick={() =>
-                          setServices((prev) => moveItem(prev, index, index + 1))
+                          setServices((prev) =>
+                            moveItem(prev, index, index + 1),
+                          )
                         }
                         disabled={
                           index === services.length - 1 ||
@@ -525,20 +1045,77 @@ export default function AdminServicesForm({
                       <label className="block text-sm font-medium text-gray-700 Ovo mb-2">
                         Icon
                       </label>
-                      <select
-                        value={service.icon_key}
-                        onChange={(e) =>
-                          updateService(index, { icon_key: e.target.value })
-                        }
-                        disabled={!readyForDbWrites || isPending}
-                        className="w-full p-3 outline-none border-[0.5px] border-gray-300 rounded-md bg-white"
-                      >
-                        {iconOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-2xl border border-gray-200 bg-linear-to-br from-blue-100 to-purple-100 flex items-center justify-center shrink-0 overflow-hidden">
+                          {service.icon_url?.trim() ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={service.icon_url.trim()}
+                              alt=""
+                              className="h-5 w-5 object-contain"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <DynamicIcon
+                              name={
+                                service.icon_key?.trim()
+                                  ? service.icon_key.trim().toLowerCase()
+                                  : "puzzle"
+                              }
+                              fallback={DynamicPuzzleFallback}
+                              className="w-5 h-5 text-gray-700"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </div>
+
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/*,.svg"
+                            onChange={(event) =>
+                              handleServiceIconFileChange(index, event)
+                            }
+                            disabled={
+                              !readyForDbWrites ||
+                              isPending ||
+                              iconUploadingIndex === index
+                            }
+                            className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-linear-to-r file:from-blue-50 file:to-purple-50 file:text-gray-800 file:font-medium hover:file:bg-gray-100 disabled:opacity-60"
+                          />
+
+                          <div className="mt-2 flex flex-wrap items-center gap-3">
+                            {service.icon_url?.trim() ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  updateService(index, { icon_url: "" })
+                                }
+                                disabled={!readyForDbWrites || isPending}
+                                className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-60"
+                              >
+                                Remove icon
+                              </button>
+                            ) : null}
+
+                            {iconUploadingIndex === index ? (
+                              <span className="text-xs text-gray-500 Ovo">
+                                Uploading...
+                              </span>
+                            ) : null}
+                          </div>
+
+                          {iconUploadErrorIndex === index && iconUploadError ? (
+                            <p className="mt-2 text-xs text-red-600 Ovo">
+                              {iconUploadError}
+                            </p>
+                          ) : (
+                            <p className="mt-2 text-xs text-gray-500 Ovo">
+                              Upload an icon image (SVG/PNG/JPG/WebP).
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="md:col-span-2">
@@ -581,7 +1158,9 @@ export default function AdminServicesForm({
                           type="checkbox"
                           checked={Boolean(service.is_active)}
                           onChange={(e) =>
-                            updateService(index, { is_active: e.target.checked })
+                            updateService(index, {
+                              is_active: e.target.checked,
+                            })
                           }
                           disabled={!readyForDbWrites || isPending}
                           className="h-4 w-4"
@@ -600,7 +1179,7 @@ export default function AdminServicesForm({
       <div className="flex justify-end">
         <button
           type="submit"
-          disabled={!readyForDbWrites || isPending}
+          disabled={!readyForDbWrites || isPending || isUploadingAnyIcon}
           className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-base disabled:opacity-60"
         >
           {isPending ? "Saving..." : "Save"}

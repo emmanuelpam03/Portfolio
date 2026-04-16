@@ -34,7 +34,7 @@ export default function AdminMobileMenu() {
       {typeof document !== "undefined" &&
         isOpen &&
         createPortal(
-          <div className="fixed inset-0 z-9999">
+          <div className="fixed inset-0 z-[10000]">
             <button
               type="button"
               aria-label="Close menu"

@@ -44,6 +44,9 @@ CREATE TABLE IF NOT EXISTS services (
   -- Example keys: 'globe', 'smartphone', 'layout', 'brush'
   icon_key    text NOT NULL,
 
+  -- Optional: uploaded icon image URL (e.g., Cloudinary secure_url)
+  icon_url    text,
+
   -- Optional: for a future "Read more" link (your current UI has this commented out).
   link_url    text,
 
@@ -55,12 +58,31 @@ CREATE TABLE IF NOT EXISTS services (
 
   CONSTRAINT services_title_len_chk CHECK (length(title) <= 200),
   CONSTRAINT services_description_len_chk CHECK (length(description) <= 1000),
-  CONSTRAINT services_icon_key_len_chk CHECK (length(icon_key) <= 60)
+  CONSTRAINT services_icon_key_len_chk CHECK (length(icon_key) <= 60),
+  CONSTRAINT services_icon_url_len_chk CHECK (icon_url IS NULL OR length(icon_url) <= 2048)
 );
 
 -- Migration helper (if `services` existed already)
 ALTER TABLE services
+  ADD COLUMN IF NOT EXISTS icon_url text;
+
+ALTER TABLE services
   ADD COLUMN IF NOT EXISTS link_url text;
+
+-- Add icon url length constraint if missing (safe upgrade)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'services_icon_url_len_chk'
+      AND conrelid = 'services'::regclass
+  ) THEN
+    ALTER TABLE services
+      ADD CONSTRAINT services_icon_url_len_chk
+      CHECK (icon_url IS NULL OR length(icon_url) <= 2048);
+  END IF;
+END $$;
 
 -- Add link length constraint if missing (safe upgrade)
 DO $$

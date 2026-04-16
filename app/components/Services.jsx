@@ -1,15 +1,8 @@
 "use client";
 
 import { motion } from "motion/react";
-import {
-  ArrowRight,
-  Brush,
-  Globe,
-  Layout,
-  Puzzle,
-  Smartphone,
-  Sparkles,
-} from "lucide-react";
+import { ArrowRight, Puzzle, Sparkles } from "lucide-react";
+import { DynamicIcon } from "lucide-react/dynamic";
 
 import { serviceData as fallbackServiceData } from "@/assets/assets";
 
@@ -26,18 +19,8 @@ const FALLBACK_CONTENT = {
   cta_button_href: "#contact",
 };
 
-const ICON_KEY_TO_ICON = {
-  globe: Globe,
-  smartphone: Smartphone,
-  layout: Layout,
-  brush: Brush,
-};
-
-function iconFromKey(iconKey) {
-  const key = String(iconKey ?? "")
-    .trim()
-    .toLowerCase();
-  return ICON_KEY_TO_ICON[key] ?? Puzzle;
+function DynamicPuzzleFallback() {
+  return <Puzzle className="w-8 h-8 text-gray-700" aria-hidden="true" />;
 }
 
 function isExternalHref(href) {
@@ -106,16 +89,16 @@ const Services = ({ content = null, services = [] }) => {
     .filter((item) => (item?.is_active ?? true) === true)
     .map((item, index) => ({
       key: item?.id ?? `${item?.title ?? "service"}-${index}`,
-      Icon: iconFromKey(item?.icon_key),
+      iconName: String(item?.icon_key ?? ""),
+      iconUrl: item?.icon_url ? String(item.icon_url) : "",
       title: String(item?.title ?? ""),
       description: String(item?.description ?? ""),
       linkHref: item?.link_url ? String(item.link_url) : null,
     }))
     .filter((item) => item.title.trim() && item.description.trim());
 
-  const fallbackServicesForUi = (Array.isArray(fallbackServiceData)
-    ? fallbackServiceData
-    : []
+  const fallbackServicesForUi = (
+    Array.isArray(fallbackServiceData) ? fallbackServiceData : []
   ).map((item, index) => ({
     key: `fallback-service-${index}`,
     Icon: item?.icon ?? Puzzle,
@@ -178,61 +161,87 @@ const Services = ({ content = null, services = [] }) => {
         transition={{ duration: 0.6, delay: 0.9 }}
         className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
       >
-        {servicesForUi.map(({ Icon, title, description, linkHref, key }, index) => {
-          const external = linkHref ? isExternalHref(linkHref) : false;
+        {servicesForUi.map(
+          ({ Icon, iconName, iconUrl, title, description, linkHref, key }, index) => {
+            const external = linkHref ? isExternalHref(linkHref) : false;
 
-          return (
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 * index }}
-              whileHover={{ y: -8, scale: 1.02 }}
-              key={key}
-              className="group relative bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-blue-400 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden"
-            >
-              {/* Gradient background on hover */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 * index }}
+                whileHover={{ y: -8, scale: 1.02 }}
+                key={key}
+                className="group relative bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-blue-400 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden"
+              >
+                {/* Gradient background on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-              {/* Decorative corner element */}
-              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-bl-full transform translate-x-10 -translate-y-10 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-500" />
+                {/* Decorative corner element */}
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-bl-full transform translate-x-10 -translate-y-10 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-500" />
 
-              <div className="relative z-10 space-y-4">
-                {/* Icon */}
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-md">
-                  <Icon className="w-8 h-8 text-gray-700" aria-hidden="true" />
+                <div className="relative z-10 space-y-4">
+                  {/* Icon */}
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-md">
+                    {iconUrl?.trim() ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={iconUrl.trim()}
+                        alt=""
+                        className="w-8 h-8 object-contain"
+                        aria-hidden="true"
+                      />
+                    ) : Icon ? (
+                      <Icon
+                        className="w-8 h-8 text-gray-700"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <DynamicIcon
+                        name={
+                          iconName?.trim()
+                            ? String(iconName).trim().toLowerCase()
+                            : "puzzle"
+                        }
+                        fallback={DynamicPuzzleFallback}
+                        className="w-8 h-8 text-gray-700"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-xl font-semibold text-gray-800 group-hover:text-blue-700 transition-colors duration-300">
+                    {title}
+                  </h3>
+
+                  {/* Description */}
+                  <p className="text-base text-gray-600 leading-6 min-h-[3rem]">
+                    {description}
+                  </p>
+
+                  {linkHref ? (
+                    <a
+                      href={linkHref}
+                      target={external ? "_blank" : undefined}
+                      rel={external ? "noopener noreferrer" : undefined}
+                      className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 group-hover:text-purple-600 mt-2 group-hover:gap-3 transition-all duration-300"
+                    >
+                      <span>Learn more</span>
+                      <ArrowRight
+                        className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300"
+                        aria-hidden="true"
+                      />
+                    </a>
+                  ) : null}
                 </div>
 
-                {/* Title */}
-                <h3 className="text-xl font-semibold text-gray-800 group-hover:text-blue-700 transition-colors duration-300">
-                  {title}
-                </h3>
-
-                {/* Description */}
-                <p className="text-base text-gray-600 leading-6 min-h-[3rem]">
-                  {description}
-                </p>
-
-                {linkHref ? (
-                  <a
-                    href={linkHref}
-                    target={external ? "_blank" : undefined}
-                    rel={external ? "noopener noreferrer" : undefined}
-                    className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 group-hover:text-purple-600 mt-2 group-hover:gap-3 transition-all duration-300"
-                  >
-                    <span>Learn more</span>
-                    <ArrowRight
-                      className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300"
-                      aria-hidden="true"
-                    />
-                  </a>
-                ) : null}
-              </div>
-
-              {/* Bottom accent line */}
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-            </motion.div>
-          );
-        })}
+                {/* Bottom accent line */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+              </motion.div>
+            );
+          },
+        )}
       </motion.div>
 
       {/* Bottom CTA Section */}

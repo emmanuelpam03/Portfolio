@@ -158,7 +158,22 @@ const hrefOrAnchorSchema = z
 export const serviceItemSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200),
   description: z.string().trim().min(1, "Description is required").max(1000),
-  icon_key: z.enum(["globe", "smartphone", "layout", "brush"]),
+  icon_key: z
+    .string()
+    .trim()
+    .min(1, "Icon name is required")
+    .max(60)
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Use a Lucide icon name in kebab-case (e.g. globe, code-2, shield-check)",
+    ),
+  icon_url: z
+    .string()
+    .trim()
+    .url("Enter a valid icon URL")
+    .max(2048)
+    .optional()
+    .nullable(),
   link_url: hrefOrAnchorSchema.optional().nullable(),
   is_active: z.boolean(),
 });
