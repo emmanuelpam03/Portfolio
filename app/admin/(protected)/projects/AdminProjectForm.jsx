@@ -994,47 +994,106 @@ export default function AdminProjectForm({
                           </div>
 
                           {availableAssets.length ? (
-                            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                              {availableAssets.slice(0, 30).map((asset) => (
-                                <button
-                                  key={asset.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setMediaUploadErrors((prev) => ({
-                                      ...prev,
-                                      [mediaKey]: null,
-                                    }));
+                            isVideo ? (
+                              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                                {availableAssets.slice(0, 30).map((asset) => (
+                                  <button
+                                    key={asset.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setMediaUploadErrors((prev) => ({
+                                        ...prev,
+                                        [mediaKey]: null,
+                                      }));
 
-                                    const assetAlt =
-                                      typeof asset?.alt === "string"
-                                        ? asset.alt
-                                        : "";
+                                      setMedia((items) =>
+                                        items.map((x) =>
+                                          x.clientId === clientId
+                                            ? {
+                                                ...x,
+                                                url: asset.url,
+                                              }
+                                            : x,
+                                        ),
+                                      );
+                                      setOpenLibraryPicker(null);
+                                    }}
+                                    className="text-left px-4 py-3 rounded-2xl border border-gray-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                                    title={asset.url}
+                                  >
+                                    <p className="text-sm text-gray-800 Ovo">
+                                      {truncateUrl(asset.url, 68)}
+                                    </p>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-72 overflow-y-auto">
+                                {availableAssets.slice(0, 30).map((asset) => (
+                                  <button
+                                    key={asset.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setMediaUploadErrors((prev) => ({
+                                        ...prev,
+                                        [mediaKey]: null,
+                                      }));
 
-                                    setMedia((items) =>
-                                      items.map((x) =>
-                                        x.clientId === clientId
-                                          ? {
-                                              ...x,
-                                              url: asset.url,
-                                              alt: String(x?.alt ?? "").trim()
-                                                .length
-                                                ? x.alt
-                                                : assetAlt || x.alt,
-                                            }
-                                          : x,
-                                      ),
-                                    );
-                                    setOpenLibraryPicker(null);
-                                  }}
-                                  className="text-left px-4 py-3 rounded-2xl border border-gray-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
-                                  title={asset.url}
-                                >
-                                  <p className="text-sm text-gray-800 Ovo">
-                                    {truncateUrl(asset.url, 68)}
-                                  </p>
-                                </button>
-                              ))}
-                            </div>
+                                      const assetAlt =
+                                        typeof asset?.alt === "string"
+                                          ? asset.alt
+                                          : "";
+
+                                      setMedia((items) =>
+                                        items.map((x) =>
+                                          x.clientId === clientId
+                                            ? {
+                                                ...x,
+                                                url: asset.url,
+                                                alt: String(x?.alt ?? "").trim()
+                                                  .length
+                                                  ? x.alt
+                                                  : assetAlt || x.alt,
+                                              }
+                                            : x,
+                                        ),
+                                      );
+                                      setOpenLibraryPicker(null);
+                                    }}
+                                    className="text-left rounded-2xl border border-gray-200 bg-white overflow-hidden hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                                    title={asset.url}
+                                  >
+                                    <div className="relative aspect-video bg-gradient-to-r from-blue-50/40 to-purple-50/40">
+                                      {canPreviewWithNextImage(asset.url) ? (
+                                        <Image
+                                          src={asset.url}
+                                          alt={
+                                            typeof asset?.alt === "string" &&
+                                            asset.alt.length
+                                              ? asset.alt
+                                              : "Media image"
+                                          }
+                                          fill
+                                          sizes="(max-width: 1024px) 50vw, 240px"
+                                          className="object-cover"
+                                        />
+                                      ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center p-4">
+                                          <p className="text-sm text-gray-700 Ovo">
+                                            Image
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="p-3">
+                                      <p className="text-xs text-gray-600 Ovo">
+                                        {truncateUrl(asset.url, 48)}
+                                      </p>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            )
                           ) : (
                             <p className="text-sm text-gray-600 Ovo mt-3">
                               No {isVideo ? "videos" : "images"} in the media
@@ -1295,7 +1354,7 @@ export default function AdminProjectForm({
                               </div>
 
                               {libraryImages.length ? (
-                                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-72 overflow-y-auto">
                                   {libraryImages.slice(0, 30).map((asset) => (
                                     <button
                                       key={asset.id}
@@ -1314,12 +1373,33 @@ export default function AdminProjectForm({
                                         );
                                         setOpenLibraryPicker(null);
                                       }}
-                                      className="text-left px-4 py-3 rounded-2xl border border-gray-200 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                                      className="text-left rounded-2xl border border-gray-200 bg-white overflow-hidden hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
                                       title={asset.url}
                                     >
-                                      <p className="text-sm text-gray-800 Ovo">
-                                        {truncateUrl(asset.url, 68)}
-                                      </p>
+                                      <div className="relative aspect-video bg-gradient-to-r from-blue-50/40 to-purple-50/40">
+                                        {canPreviewWithNextImage(asset.url) ? (
+                                          <Image
+                                            src={asset.url}
+                                            alt={
+                                              asset.alt ? asset.alt : "Poster"
+                                            }
+                                            fill
+                                            sizes="(max-width: 1024px) 50vw, 240px"
+                                            className="object-cover"
+                                          />
+                                        ) : (
+                                          <div className="absolute inset-0 flex items-center justify-center p-4">
+                                            <p className="text-sm text-gray-700 Ovo">
+                                              Image
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="p-3">
+                                        <p className="text-xs text-gray-600 Ovo">
+                                          {truncateUrl(asset.url, 48)}
+                                        </p>
+                                      </div>
                                     </button>
                                   ))}
                                 </div>
