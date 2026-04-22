@@ -928,7 +928,7 @@ export default function AdminProjectForm({
                         </div>
                       </div>
 
-                      <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 aspect-video relative">
+                      <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 relative h-40 sm:h-44">
                         {!isVideo &&
                         item.url &&
                         canPreviewWithNextImage(item.url) ? (
@@ -1293,7 +1293,7 @@ export default function AdminProjectForm({
                             </div>
                           </div>
 
-                          <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 aspect-video relative">
+                          <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 relative h-40 sm:h-44">
                             {item.poster_url &&
                             canPreviewWithNextImage(item.poster_url) ? (
                               <Image

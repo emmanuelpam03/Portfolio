@@ -5,10 +5,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
 
-import { ArrowLeft, Briefcase, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  Briefcase,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+} from "lucide-react";
 
 export default function ProjectDetailsClient({ slug = "", project = null }) {
   const [showAllMedia, setShowAllMedia] = React.useState(false);
+  const [lightboxIndex, setLightboxIndex] = React.useState(null);
 
   const safeSlug = String(slug ?? "");
 
@@ -35,6 +43,91 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
       caption: item?.caption ? String(item.caption) : null,
     }))
     .filter((item) => Boolean(item.url));
+
+  const imageItems = mediaItems.filter((item) => item.type === "image");
+  const imageIndexByKey = new Map();
+  imageItems.forEach((item, index) => {
+    const key = item.id ?? item.url;
+    if (key) imageIndexByKey.set(key, index);
+  });
+
+  const activeImage =
+    typeof lightboxIndex === "number" &&
+    lightboxIndex >= 0 &&
+    lightboxIndex < imageItems.length
+      ? imageItems[lightboxIndex]
+      : null;
+
+  const closeLightbox = () => setLightboxIndex(null);
+
+  const goPrev = () => {
+    setLightboxIndex((current) => {
+      if (typeof current !== "number") return current;
+      return current > 0 ? current - 1 : current;
+    });
+  };
+
+  const goNext = () => {
+    setLightboxIndex((current) => {
+      if (typeof current !== "number") return current;
+      const lastIndex = Math.max(0, imageItems.length - 1);
+      return current < lastIndex ? current + 1 : current;
+    });
+  };
+
+  React.useEffect(() => {
+    if (
+      typeof lightboxIndex !== "number" ||
+      lightboxIndex < 0 ||
+      lightboxIndex >= imageItems.length
+    ) {
+      return;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setLightboxIndex(null);
+        return;
+      }
+
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setLightboxIndex((current) => {
+          if (typeof current !== "number") return current;
+          return current > 0 ? current - 1 : current;
+        });
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setLightboxIndex((current) => {
+          if (typeof current !== "number") return current;
+          const lastIndex = Math.max(0, imageItems.length - 1);
+          return current < lastIndex ? current + 1 : current;
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxIndex, imageItems.length]);
+
+  React.useEffect(() => {
+    if (
+      typeof lightboxIndex !== "number" ||
+      lightboxIndex < 0 ||
+      lightboxIndex >= imageItems.length
+    ) {
+      return;
+    }
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [lightboxIndex, imageItems.length]);
 
   // URL validation helper at component level or in a utils file
   const isValidHttpUrl = (string) => {
@@ -341,7 +434,19 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
                               key={key}
                               className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
                             >
-                              <div className="relative w-full aspect-video">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const indexKey = item.id ?? item.url;
+                                  const nextIndex = indexKey
+                                    ? imageIndexByKey.get(indexKey)
+                                    : null;
+                                  if (typeof nextIndex !== "number") return;
+                                  setLightboxIndex(nextIndex);
+                                }}
+                                className="relative w-full aspect-video cursor-zoom-in"
+                                aria-label="Open image"
+                              >
                                 <Image
                                   src={item.url}
                                   alt={item.alt || `${title} media ${idx + 1}`}
@@ -349,7 +454,7 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
                                   className="object-cover"
                                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                                 />
-                              </div>
+                              </button>
                               {item.caption ? (
                                 <div className="p-3 text-base text-gray-600 Ovo">
                                   {item.caption}
@@ -384,6 +489,61 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
 
       {/* Bottom decorative element */}
       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+      {activeImage ? (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 p-4 sm:p-6 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image preview"
+          onClick={closeLightbox}
+        >
+          <div
+            className="relative w-full max-w-5xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={closeLightbox}
+              className="absolute -top-12 right-0 sm:right-2 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/15 transition"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
+              Close
+            </button>
+
+            <div className="relative w-full h-[70vh] sm:h-[78vh] overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <Image
+                src={activeImage.url}
+                alt={activeImage.alt || `${title} image ${lightboxIndex + 1}`}
+                fill
+                sizes="100vw"
+                className="object-contain"
+                priority
+              />
+
+              <button
+                type="button"
+                onClick={goPrev}
+                disabled={lightboxIndex === 0}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/15 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="w-5 h-5" aria-hidden="true" />
+              </button>
+
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={lightboxIndex >= imageItems.length - 1}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/15 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center"
+                aria-label="Next image"
+              >
+                <ChevronRight className="w-5 h-5" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
