@@ -162,7 +162,10 @@ const Services = ({ content = null, services = [] }) => {
         className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
       >
         {servicesForUi.map(
-          ({ Icon, iconName, iconUrl, title, description, linkHref, key }, index) => {
+          (
+            { Icon, iconName, iconUrl, title, description, linkHref, key },
+            index,
+          ) => {
             const external = linkHref ? isExternalHref(linkHref) : false;
 
             return (
