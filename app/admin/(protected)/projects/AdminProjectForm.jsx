@@ -928,7 +928,7 @@ export default function AdminProjectForm({
                         </div>
                       </div>
 
-                      <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 relative h-40 sm:h-44">
+                      <div className="mt-4 w-full max-w-md mx-auto overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 relative h-32 sm:h-36">
                         {!isVideo &&
                         item.url &&
                         canPreviewWithNextImage(item.url) ? (
@@ -940,8 +940,8 @@ export default function AdminProjectForm({
                             className="object-contain bg-white"
                           />
                         ) : !isVideo && item.url ? (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-                            <p className="text-base text-gray-700 Ovo">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                            <p className="text-sm text-gray-700 Ovo">
                               Image uploaded (preview unavailable)
                             </p>
                             <p className="text-sm text-gray-600 Ovo mt-2">
@@ -949,8 +949,8 @@ export default function AdminProjectForm({
                             </p>
                           </div>
                         ) : (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-                            <p className="text-base text-gray-700 Ovo">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                            <p className="text-sm text-gray-700 Ovo">
                               {isVideo
                                 ? item.url
                                   ? "Video uploaded"
@@ -1293,7 +1293,7 @@ export default function AdminProjectForm({
                             </div>
                           </div>
 
-                          <div className="mt-4 overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 relative h-40 sm:h-44">
+                          <div className="mt-4 w-full max-w-md mx-auto overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gradient-to-r from-blue-50/60 to-purple-50/60 relative h-32 sm:h-36">
                             {item.poster_url &&
                             canPreviewWithNextImage(item.poster_url) ? (
                               <Image
@@ -1304,8 +1304,8 @@ export default function AdminProjectForm({
                                 className="object-contain bg-white"
                               />
                             ) : item.poster_url ? (
-                              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-                                <p className="text-base text-gray-700 Ovo">
+                              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                                <p className="text-sm text-gray-700 Ovo">
                                   Poster uploaded (preview unavailable)
                                 </p>
                                 <p className="text-sm text-gray-600 Ovo mt-2">
@@ -1313,8 +1313,8 @@ export default function AdminProjectForm({
                                 </p>
                               </div>
                             ) : (
-                              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-                                <p className="text-base text-gray-700 Ovo">
+                              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                                <p className="text-sm text-gray-700 Ovo">
                                   No poster uploaded
                                 </p>
                                 <p className="text-sm text-gray-600 Ovo mt-2">

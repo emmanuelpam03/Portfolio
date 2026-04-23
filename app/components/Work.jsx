@@ -21,7 +21,7 @@ const Work = ({ projects = [] }) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
       id="work"
       className="relative w-full px-[12%] py-20 scroll-mt-20 bg-gradient-to-b from-white via-blue-50/20 to-purple-50/30 overflow-hidden"

@@ -112,7 +112,7 @@ const Services = ({ content = null, services = [] }) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.5, delay: 0.3 }}
       id="services"
       className="relative w-full px-[12%] py-20 scroll-mt-20 bg-gradient-to-b from-blue-50/30 via-purple-50/20 to-white overflow-hidden"

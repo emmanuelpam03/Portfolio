@@ -17,6 +17,9 @@ import {
 export default function ProjectDetailsClient({ slug = "", project = null }) {
   const [showAllMedia, setShowAllMedia] = React.useState(false);
   const [lightboxIndex, setLightboxIndex] = React.useState(null);
+  const dialogRef = React.useRef(null);
+  const closeButtonRef = React.useRef(null);
+  const previouslyFocusedElementRef = React.useRef(null);
 
   const safeSlug = String(slug ?? "");
 
@@ -51,12 +54,12 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
     if (key) imageIndexByKey.set(key, index);
   });
 
-  const activeImage =
+  const lightboxOpen =
     typeof lightboxIndex === "number" &&
     lightboxIndex >= 0 &&
-    lightboxIndex < imageItems.length
-      ? imageItems[lightboxIndex]
-      : null;
+    lightboxIndex < imageItems.length;
+
+  const activeImage = lightboxOpen ? imageItems[lightboxIndex] : null;
 
   const closeLightbox = () => setLightboxIndex(null);
 
@@ -75,59 +78,92 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
     });
   };
 
-  React.useEffect(() => {
-    if (
-      typeof lightboxIndex !== "number" ||
-      lightboxIndex < 0 ||
-      lightboxIndex >= imageItems.length
-    ) {
+  const handleLightboxKeyDown = (event) => {
+    if (!lightboxOpen) return;
+
+    if (event.key === "Tab") {
+      const container = dialogRef.current;
+      if (!container) return;
+
+      const focusable = Array.from(
+        container.querySelectorAll(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((node) => {
+        if (!(node instanceof HTMLElement)) return false;
+        if (node.hasAttribute("disabled")) return false;
+        return Boolean(
+          node.offsetWidth || node.offsetHeight || node.getClientRects().length,
+        );
+      });
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        container.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey) {
+        if (active === first || active === container) {
+          event.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+
+      if (active === last || active === container) {
+        event.preventDefault();
+        first.focus();
+      }
+
       return;
     }
 
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        setLightboxIndex(null);
-        return;
-      }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeLightbox();
+      return;
+    }
 
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        setLightboxIndex((current) => {
-          if (typeof current !== "number") return current;
-          return current > 0 ? current - 1 : current;
-        });
-        return;
-      }
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      goPrev();
+      return;
+    }
 
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        setLightboxIndex((current) => {
-          if (typeof current !== "number") return current;
-          const lastIndex = Math.max(0, imageItems.length - 1);
-          return current < lastIndex ? current + 1 : current;
-        });
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      goNext();
+    }
+  };
+
+  React.useEffect(() => {
+    if (!lightboxOpen) return;
+
+    previouslyFocusedElementRef.current = document.activeElement;
+    closeButtonRef.current?.focus();
+
+    return () => {
+      const previous = previouslyFocusedElementRef.current;
+      previouslyFocusedElementRef.current = null;
+      if (previous && typeof previous.focus === "function") {
+        previous.focus();
       }
     };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [lightboxIndex, imageItems.length]);
+  }, [lightboxOpen]);
 
   React.useEffect(() => {
-    if (
-      typeof lightboxIndex !== "number" ||
-      lightboxIndex < 0 ||
-      lightboxIndex >= imageItems.length
-    ) {
-      return;
-    }
+    if (!lightboxOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [lightboxIndex, imageItems.length]);
+  }, [lightboxOpen]);
 
   // URL validation helper at component level or in a utils file
   const isValidHttpUrl = (string) => {
@@ -402,7 +438,7 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
                     )}
 
                     {total > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                         {visible.map((item, idx) => {
                           const key =
                             item.id ?? `${item.type}-${item.url}-${idx}`;
@@ -452,7 +488,7 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
                                   alt={item.alt || `${title} media ${idx + 1}`}
                                   fill
                                   className="object-cover"
-                                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                                 />
                               </button>
                               {item.caption ? (
@@ -496,6 +532,9 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
           aria-modal="true"
           aria-label="Image preview"
           onClick={closeLightbox}
+          onKeyDown={handleLightboxKeyDown}
+          ref={dialogRef}
+          tabIndex={-1}
         >
           <div
             className="relative w-full max-w-5xl"
@@ -506,6 +545,7 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
               onClick={closeLightbox}
               className="absolute -top-12 right-0 sm:right-2 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/15 transition"
               aria-label="Close"
+              ref={closeButtonRef}
             >
               <X className="w-4 h-4" aria-hidden="true" />
               Close

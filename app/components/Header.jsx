@@ -235,7 +235,7 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
           {/* Greeting Badge */}
           <motion.div
             initial={{ x: -50, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
+            animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-gray-200 shadow-sm"
           >
@@ -248,7 +248,7 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
           {/* Main Title */}
           <motion.div
             initial={{ x: -50, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
+            animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
             <h3 className="text-base md:text-lg Ovo text-gray-600 mb-1 flex items-center gap-2 justify-center lg:justify-start">
@@ -276,7 +276,7 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
           {/* Location */}
           <motion.div
             initial={{ x: -50, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
+            animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.6 }}
             className="flex items-center gap-2 text-blue-600 font-medium justify-center lg:justify-start"
           >
@@ -287,7 +287,7 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
           {/* Description */}
           <motion.p
             initial={{ x: -50, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
+            animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.8 }}
             className="text-gray-600 text-base sm:text-lg leading-relaxed max-w-xl"
           >
@@ -297,7 +297,7 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
           {/* CTA Buttons */}
           <motion.div
             initial={{ x: -50, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
+            animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 1 }}
             className="flex flex-col sm:flex-row items-center gap-4 pt-4 justify-center lg:justify-start"
           >
@@ -349,7 +349,7 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
           {/* Tech Stack Pills */}
           <motion.div
             initial={{ x: -50, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
+            animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 1.2 }}
             className="flex flex-wrap gap-2 pt-2 justify-center lg:justify-start"
           >
@@ -357,7 +357,7 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
               ? heroLanguagesForUi.map((item, index) => (
                   <motion.div
                     initial={{ opacity: 0, scale: 0 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: 0.05 * index }}
                     key={item.key}
                     className="group relative"
@@ -388,7 +388,7 @@ const Header = ({ heroImage = null, heroLanguages = [], settings = null }) => {
         {/* Right Side - Profile Image */}
         <motion.div
           initial={{ x: 50, opacity: 0, scale: 0.8 }}
-          whileInView={{ x: 0, opacity: 1, scale: 1 }}
+          animate={{ x: 0, opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.3, type: "spring" }}
           className="relative flex-shrink-0"
         >

@@ -115,7 +115,7 @@ const About = ({ about = null }) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
       id="about"
       className="relative w-full px-[12%] py-20 scroll-mt-20 bg-gradient-to-b from-white to-blue-50/30 overflow-hidden"
