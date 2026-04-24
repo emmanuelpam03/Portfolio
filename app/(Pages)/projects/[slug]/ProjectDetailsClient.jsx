@@ -388,12 +388,6 @@ export default function ProjectDetailsClient({ slug = "", project = null }) {
                     )}
                   </div>
                 </div>
-
-                <div className="mt-6 rounded-xl border border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 p-4">
-                  <p className="text-gray-700 Ovo text-base leading-relaxed">
-                    Project content is managed from the admin dashboard.
-                  </p>
-                </div>
               </motion.aside>
             </div>
 
