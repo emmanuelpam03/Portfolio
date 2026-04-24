@@ -13,6 +13,15 @@ const slugify = (value) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 
+const truncateWords = (value, maxWords = 10) => {
+  const words = String(value ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (words.length <= maxWords) return words.join(" ");
+  return `${words.slice(0, maxWords).join(" ")}...`;
+};
+
 export default function ProjectsPageClient({ projects = [] }) {
   const items = Array.isArray(projects) ? projects : [];
 
@@ -147,7 +156,7 @@ export default function ProjectsPageClient({ projects = [] }) {
                           {project?.title ?? ""}
                         </h2>
                         <p className="text-base text-gray-600 leading-relaxed">
-                          {project?.description ?? ""}
+                          {truncateWords(project?.description ?? "", 10)}
                         </p>
                       </div>
 

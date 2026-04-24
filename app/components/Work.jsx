@@ -14,6 +14,15 @@ const slugify = (value) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 
+const truncateWords = (value, maxWords = 10) => {
+  const words = String(value ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (words.length <= maxWords) return words.join(" ");
+  return `${words.slice(0, maxWords).join(" ")}...`;
+};
+
 const Work = ({ projects = [] }) => {
   const items =
     Array.isArray(projects) && projects.length ? projects : workData;
@@ -77,7 +86,7 @@ const Work = ({ projects = [] }) => {
             : slugify(project?.title);
           const heroImage = project?.hero_image_url ?? project?.bgImage ?? "";
           const title = project?.title ?? "";
-          const description = project?.description ?? "";
+          const description = truncateWords(project?.description ?? "", 10);
 
           return (
             <motion.div
