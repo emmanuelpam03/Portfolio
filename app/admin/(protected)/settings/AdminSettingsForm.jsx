@@ -97,6 +97,7 @@ export default function AdminSettingsForm({ initialSettings, setupMessage }) {
   );
 
   const { success: toastSuccess, error: toastError } = useToast();
+  const formRef = useRef(null);
 
   useEffect(() => {
     const message =
@@ -114,6 +115,7 @@ export default function AdminSettingsForm({ initialSettings, setupMessage }) {
     normalizeInitialCvUrl(initialSettings),
   );
   const fileInputRef = useRef(null);
+  const [shouldAutoSaveCv, setShouldAutoSaveCv] = useState(false);
 
   const [cvUpload, setCvUpload] = useState({
     status: "idle", // idle | uploading | error | success
@@ -137,6 +139,16 @@ export default function AdminSettingsForm({ initialSettings, setupMessage }) {
 
   const isUploadingCv = cvUpload.status === "uploading";
   const isBusy = isPending || isUploadingCv;
+
+  useEffect(() => {
+    if (!shouldAutoSaveCv) return;
+    if (setupMessage) return;
+    if (isBusy) return;
+    if (!String(cvUrl ?? "").trim()) return;
+
+    formRef.current?.requestSubmit();
+    setShouldAutoSaveCv(false);
+  }, [shouldAutoSaveCv, cvUrl, setupMessage, isBusy]);
 
   function viewCv() {
     const href = String(cvUrl ?? "").trim();
@@ -167,9 +179,10 @@ export default function AdminSettingsForm({ initialSettings, setupMessage }) {
       });
 
       setCvUrl(secureUrl);
+      setShouldAutoSaveCv(true);
       setCvUpload({
         status: "success",
-        message: "CV uploaded. Click Save to publish it.",
+        message: "CV uploaded. Saving...",
       });
     } catch (error) {
       setCvUpload({ status: "error", message: toErrorMessage(error) });
@@ -220,7 +233,12 @@ export default function AdminSettingsForm({ initialSettings, setupMessage }) {
   const hasCv = Boolean(String(cvUrl ?? "").trim());
 
   return (
-    <form action={formAction} className="grid grid-cols-1 gap-5" noValidate>
+    <form
+      ref={formRef}
+      action={formAction}
+      className="grid grid-cols-1 gap-5"
+      noValidate
+    >
       {(setupMessage || state?.message) && (
         <div className="mb-1 rounded-2xl border border-gray-200 bg-linear-to-r from-blue-50/60 to-purple-50/60 p-4">
           {setupMessage && (
